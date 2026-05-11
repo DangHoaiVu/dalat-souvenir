@@ -1,0 +1,201 @@
+.order-card {
+  margin: 10px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--ion-color-primary);
+  background: var(--ion-item-background, var(--ion-background-color));
+  padding: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+// ─── Card Header ───────────────────────────────────────────────────────────────
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.order-id-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(var(--ion-color-primary-rgb, 66, 133, 244), 0.12);
+  color: var(--ion-color-primary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+
+  .receipt-icon {
+    font-size: 0.9rem;
+  }
+}
+
+.total-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ff0000bb;
+}
+
+// ─── Meta Row ──────────────────────────────────────────────────────────────────
+
+.card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  opacity: 0.7;
+  background: rgba(128, 128, 128, 0.1);
+  padding: 3px 9px;
+  border-radius: 12px;
+
+  ion-icon {
+    font-size: 0.85rem;
+  }
+}
+
+// ─── Divider ───────────────────────────────────────────────────────────────────
+
+.divider {
+  height: 1px;
+  background: rgba(128, 128, 128, 0.15);
+  margin: 2px 0 12px;
+}
+
+// ─── Buyer Section ─────────────────────────────────────────────────────────────
+
+.buyer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.buyer-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 1rem;
+    color: var(--ion-color-primary);
+    flex-shrink: 0;
+  }
+}
+
+.buyer-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  opacity: 0.8;
+
+  ion-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.address-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--ion-color-primary);
+    text-decoration-style: solid;
+  }
+}
+
+// ─── Items Accordion ───────────────────────────────────────────────────────────
+
+.items-accordion {
+  margin-top: 12px;
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+  padding-top: 10px;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--ion-color-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  ion-icon {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+  }
+}
+
+.items-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  padding: 6px 10px;
+  background: rgba(128, 128, 128, 0.06);
+  border-radius: 8px;
+}
+
+.item-qty-badge {
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  min-width: 28px;
+  font-size: 0.82rem;
+}
+
+.item-name {
+  flex: 1 1 auto;
+  opacity: 0.9;
+}
+
+.item-price {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// ─── Animation ─────────────────────────────────────────────────────────────────
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

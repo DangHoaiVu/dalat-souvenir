@@ -1,0 +1,76 @@
+<div class="order-card">
+  <!-- Card Header -->
+  <div class="card-header">
+    <div class="order-id-badge">
+      <ion-icon name="receipt-outline" class="receipt-icon"></ion-icon>
+      <span>#{{ order.orderId.slice(0, 8) }}</span>
+    </div>
+    <div class="total-price">{{ order.totalPrice | currency:'VND' }}</div>
+  </div>
+
+  <!-- Metadata Row -->
+  <div class="card-meta-row">
+    <div class="meta-chip">
+      <ion-icon name="time-outline"></ion-icon>
+      <span>{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+    <div class="meta-chip" *ngIf="order.totalQuantity">
+      <ion-icon name="cube-outline"></ion-icon>
+      <span>{{ order.totalQuantity }} items</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Buyer Info -->
+  <div class="buyer-section">
+    <div class="buyer-name" *ngIf="order.buyerName">
+      <ion-icon name="person-outline"></ion-icon>
+      <span>{{ order.buyerName }}</span>
+    </div>
+    <div class="buyer-name" *ngIf="!order.buyerName && order.userId">
+      <ion-icon name="person-outline"></ion-icon>
+      <span>{{ order.userId.slice(0, 8) }}</span>
+    </div>
+
+    <div class="buyer-detail" *ngIf="order.buyerPhone">
+      <ion-icon name="call-outline"></ion-icon>
+      <span>{{ order.buyerPhone }}</span>
+    </div>
+
+    <div class="buyer-detail" *ngIf="order.buyerAddress">
+      <ion-icon name="location-outline"></ion-icon>
+      <a
+        *ngIf="googleMapsLink; else noLink"
+        [href]="googleMapsLink"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="address-link"
+        (click)="$event.stopPropagation()"
+      >
+        {{ order.buyerAddress }}
+      </a>
+      <ng-template #noLink>
+        <span>{{ order.buyerAddress }}</span>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Items Accordion -->
+  <div class="items-accordion" *ngIf="order.items.length">
+    <button class="toggle-btn" (click)="toggleExpanded()">
+      <span>{{ expanded ? ('ORDERS.HIDE_ITEMS' | translate) : ('ORDERS.SHOW_ITEMS' | translate) }}</span>
+      <ion-icon [name]="expanded ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+    </button>
+
+    <div class="items-list" *ngIf="expanded">
+      <div class="order-item-row" *ngFor="let item of order.items">
+        <div class="item-qty-badge">{{ item.quantity }}×</div>
+        <span class="item-name">{{ item.productName }}</span>
+        <span class="item-price" *ngIf="item.priceAtPurchase != null">
+          {{ item.quantity * item.priceAtPurchase | currency:'VND' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
