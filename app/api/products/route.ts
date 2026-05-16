@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { mapProductRow, type SupabaseProductRow } from "@/lib/map-supabase-product";
 import { createAdminSupabaseClient } from "@/lib/supabaseClient";
+import { requireAdmin } from "@/lib/server-auth";
 // Helper to map request body to DB payload
 import type { NextRequest } from "next/server";
 const supabase = createAdminSupabaseClient();
@@ -51,7 +52,7 @@ const getProductsCached = unstable_cache(
       throw new Error(error.message);
     }
 
-    return (data as SupabaseProductRow[] | null)?.map(mapProductRow) ?? [];
+    return ((data as unknown as SupabaseProductRow[]) ?? []).map(mapProductRow);
   },
   ["api-products"],
   { revalidate: 300, tags: ["products"] },
@@ -80,7 +81,16 @@ function toDbPayload(input: ProductInput) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = await req.json();
+  if (!body?.name || !Number.isFinite(Number(body.price))) {
+    return NextResponse.json({ error: "Missing required product fields" }, { status: 400 });
+  }
+
   const payload = { ...toDbPayload(body), created_at: new Date().toISOString() };
   const { data, error } = await supabase
     .from("products")
@@ -92,10 +102,15 @@ export async function POST(req: NextRequest) {
   }
   revalidateTag("products");
   revalidateTag("categories");
-  return NextResponse.json(mapProductRow(data as SupabaseProductRow));
+  return NextResponse.json(mapProductRow(data as unknown as SupabaseProductRow));
 }
 
 export async function PUT(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = await req.json();
   const { product_id, id, ...rest } = body;
   const prodId = product_id || id;
@@ -118,7 +133,40 @@ export async function PUT(req: NextRequest) {
   }
   revalidateTag("products");
   revalidateTag("categories");
-  return NextResponse.json(mapProductRow(data[0] as SupabaseProductRow));
+  return NextResponse.json(mapProductRow(data[0] as unknown as SupabaseProductRow));
+}
+
+export async function DELETE(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const productId = searchParams.get("id") || searchParams.get("product_id");
+
+  if (!productId) {
+    return NextResponse.json({ error: "Missing product id" }, { status: 400 });
+  }
+
+  const { error: rpcError } = await supabase.rpc("delete_product_with_image", {
+    p_product_id: productId,
+  });
+
+  if (rpcError) {
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("product_id", productId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  revalidateTag("products");
+  revalidateTag("categories");
+  return NextResponse.json({ success: true });
 }
 
 export async function GET() {

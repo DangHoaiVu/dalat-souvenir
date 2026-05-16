@@ -4,12 +4,18 @@ import { persist } from "zustand/middleware";
 import { cartProductId } from "@/lib/cart-product-id";
 import type { CartItem, Product } from "@/types";
 
-interface CartState {
+type CartSnapshot = {
   items: CartItem[];
-  selectedItemIds: string[]; // Store product_id of selected items
-  isOpen: boolean;
+  selectedItemIds: string[];
   totalItems: number;
   totalPrice: number;
+};
+
+interface CartState extends CartSnapshot {
+  ownerKey: string | null;
+  cartsByOwner: Record<string, CartSnapshot>;
+  isOpen: boolean;
+  setOwner: (ownerKey: string | null) => void;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -23,17 +29,67 @@ interface CartState {
   removeSelectedItems: () => void;
 }
 
+const emptyCart = (): CartSnapshot => ({
+  items: [],
+  selectedItemIds: [],
+  totalItems: 0,
+  totalPrice: 0,
+});
+
+const totalsFor = (items: CartItem[]) => ({
+  totalItems: items.reduce((total, item) => total + item.quantity, 0),
+  totalPrice: items.reduce((total, item) => total + item.product.price * item.quantity, 0),
+});
+
+const snapshotFromState = (state: CartState): CartSnapshot => ({
+  items: state.items,
+  selectedItemIds: state.selectedItemIds,
+  totalItems: state.totalItems,
+  totalPrice: state.totalPrice,
+});
+
+const commitCart = (
+  state: CartState,
+  snapshot: CartSnapshot,
+  extra: Partial<CartState> = {},
+): Partial<CartState> => ({
+  ...snapshot,
+  cartsByOwner: state.ownerKey
+    ? { ...state.cartsByOwner, [state.ownerKey]: snapshot }
+    : state.cartsByOwner,
+  ...extra,
+});
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: [],
-      selectedItemIds: [],
+      ...emptyCart(),
+      ownerKey: null,
+      cartsByOwner: {},
       isOpen: false,
-      totalItems: 0,
-      totalPrice: 0,
+
+      setOwner: (ownerKey) =>
+        set((state) => {
+          if (state.ownerKey === ownerKey) return state;
+
+          const cartsByOwner = state.ownerKey
+            ? { ...state.cartsByOwner, [state.ownerKey]: snapshotFromState(state) }
+            : state.cartsByOwner;
+
+          const nextSnapshot = ownerKey ? cartsByOwner[ownerKey] ?? emptyCart() : emptyCart();
+
+          return {
+            ...nextSnapshot,
+            ownerKey,
+            cartsByOwner,
+            isOpen: ownerKey ? state.isOpen : false,
+          };
+        }),
+
       addItem: (product, quantity = 1) =>
         set((state) => {
+          if (!state.ownerKey) return state;
+
           const pid = cartProductId(product);
           const existing = state.items.find((item) => cartProductId(item.product) === pid);
           const updatedItems = existing
@@ -44,34 +100,27 @@ export const useCartStore = create<CartState>()(
               )
             : [...state.items, { product, quantity }];
 
-          // Auto-select new items
-          const newSelectedIds = existing 
-            ? state.selectedItemIds 
+          const selectedItemIds = existing
+            ? state.selectedItemIds
             : [...state.selectedItemIds, pid];
 
-          return {
+          return commitCart(state, {
             items: updatedItems,
-            selectedItemIds: newSelectedIds,
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce(
-              (total, item) => total + item.product.price * item.quantity,
-              0,
-            ),
-          };
+            selectedItemIds,
+            ...totalsFor(updatedItems),
+          });
         }),
+
       removeItem: (productId) =>
         set((state) => {
           const updatedItems = state.items.filter((item) => cartProductId(item.product) !== productId);
-          return {
+          return commitCart(state, {
             items: updatedItems,
             selectedItemIds: state.selectedItemIds.filter((id) => id !== productId),
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce(
-              (total, item) => total + item.product.price * item.quantity,
-              0,
-            ),
-          };
+            ...totalsFor(updatedItems),
+          });
         }),
+
       updateQuantity: (productId, quantity) =>
         set((state) => {
           const updatedItems =
@@ -80,48 +129,61 @@ export const useCartStore = create<CartState>()(
               : state.items.map((item) =>
                   cartProductId(item.product) === productId ? { ...item, quantity } : item,
                 );
-          return {
+
+          return commitCart(state, {
             items: updatedItems,
-            selectedItemIds: quantity <= 0 
+            selectedItemIds: quantity <= 0
               ? state.selectedItemIds.filter((id) => id !== productId)
               : state.selectedItemIds,
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce(
-              (total, item) => total + item.product.price * item.quantity,
-              0,
-            ),
-          };
+            ...totalsFor(updatedItems),
+          });
         }),
-      clearCart: () => set({ items: [], selectedItemIds: [], totalItems: 0, totalPrice: 0 }),
-      openCart: () => set({ isOpen: true }),
+
+      clearCart: () => set((state) => commitCart(state, emptyCart())),
+      openCart: () => {
+        if (!get().ownerKey) return;
+        set({ isOpen: true });
+      },
       closeCart: () => set({ isOpen: false }),
-      toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
-      toggleItemSelection: (productId) => 
-        set((state) => ({
-          selectedItemIds: state.selectedItemIds.includes(productId)
-            ? state.selectedItemIds.filter((id) => id !== productId)
-            : [...state.selectedItemIds, productId],
-        })),
-      selectAllItems: () => 
-        set((state) => ({
-          selectedItemIds: state.items.map((item) => cartProductId(item.product)),
-        })),
-      deselectAllItems: () => set({ selectedItemIds: [] }),
-      removeSelectedItems: () => 
+      toggleCart: () => {
+        if (!get().ownerKey) return;
+        set((state) => ({ isOpen: !state.isOpen }));
+      },
+      toggleItemSelection: (productId) =>
         set((state) => {
-          const updatedItems = state.items.filter((item) => !state.selectedItemIds.includes(cartProductId(item.product)));
-          return {
+          const selectedItemIds = state.selectedItemIds.includes(productId)
+            ? state.selectedItemIds.filter((id) => id !== productId)
+            : [...state.selectedItemIds, productId];
+
+          return commitCart(state, { ...snapshotFromState(state), selectedItemIds });
+        }),
+      selectAllItems: () =>
+        set((state) =>
+          commitCart(state, {
+            ...snapshotFromState(state),
+            selectedItemIds: state.items.map((item) => cartProductId(item.product)),
+          }),
+        ),
+      deselectAllItems: () =>
+        set((state) => commitCart(state, { ...snapshotFromState(state), selectedItemIds: [] })),
+      removeSelectedItems: () =>
+        set((state) => {
+          const updatedItems = state.items.filter(
+            (item) => !state.selectedItemIds.includes(cartProductId(item.product)),
+          );
+
+          return commitCart(state, {
             items: updatedItems,
             selectedItemIds: [],
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce(
-              (total, item) => total + item.product.price * item.quantity,
-              0,
-            ),
-          };
+            ...totalsFor(updatedItems),
+          });
         }),
     }),
-
-    { name: "shopluuniem-cart" },
+    {
+      name: "shopluuniem-cart",
+      partialize: (state) => ({
+        cartsByOwner: state.cartsByOwner,
+      }),
+    },
   ),
 );

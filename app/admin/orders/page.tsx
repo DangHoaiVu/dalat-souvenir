@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { authFetch } from "@/lib/auth-fetch";
 import { supabase } from "@/lib/supabaseClient";
 import type { Order } from "@/types";
 
@@ -75,7 +76,7 @@ export default function Page() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/orders", { cache: "no-store" });
+      const response = await authFetch("/api/orders", { cache: "no-store" });
       if (!response.ok) {
         throw new Error(`Unable to load orders (${response.status})`);
       }
@@ -176,7 +177,7 @@ export default function Page() {
         }
       }
 
-      const response = await fetch("/api/orders", {
+      const response = await authFetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

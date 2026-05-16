@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Gift, Menu, ShoppingCart, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Gift, Menu, ShoppingCart, User, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useAuthStore } from "@/stores/authStore";
@@ -19,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const navLinks = [
   { label: "Sản phẩm", href: "/products" },
@@ -28,133 +29,171 @@ const navLinks = [
 ];
 
 const giftSetUrl = "/products?category=qua-tang";
-const brandName = "Shop Lưu Niệm";
+const brandName = "Đà Lạt Souvenir";
 
 export default function Header() {
   const router = useRouter();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const user = useAuthStore((state) => state.user);
   const { totalItems, openCart } = useCartStore();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 36);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleCartClick = () => {
+    if (!isInitialized || !isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    openCart();
+  };
 
   return (
     <motion.header
-      initial={{ y: -20, opacity: 0 }}
+      initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-4 z-50 mx-auto w-[calc(100%-32px)] max-w-7xl rounded-full border border-border/40 bg-white/70 dark:bg-black/40 backdrop-blur-xl shadow-lg ring-1 ring-white/20 dark:ring-white/10"
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        "sticky top-0 z-50 w-full border-b transition-all duration-200",
+        isScrolled
+          ? "border-[var(--color-border)] bg-[var(--glass-bg)] shadow-[var(--shadow-sm)] backdrop-blur-xl"
+          : "border-transparent bg-[color-mix(in_srgb,var(--color-bg)_88%,transparent)] backdrop-blur-md",
+      )}
     >
-      <div className="flex h-16 md:h-[64px] items-center justify-between px-4 md:px-6">
-        
-        {/* Left: Mobile Menu & Logo */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[var(--color-surface)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[var(--color-text-primary)]"
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+
+      <div className="mx-auto grid h-[72px] max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6 lg:h-20 lg:px-8">
         <div className="flex items-center gap-3">
           <Sheet>
             <SheetTrigger
-              className="inline-flex size-10 items-center justify-center rounded-full md:hidden hover:bg-white/50 transition-colors"
+              className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)] transition-colors hover:bg-[var(--color-surface-muted)] md:hidden"
               aria-label="Mở menu điều hướng"
             >
-              <Menu className="size-5 text-foreground" />
+              <Menu className="size-5" aria-hidden="true" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] bg-white/80 backdrop-blur-2xl border-white/40">
-              <SheetTitle className="sr-only">Menu Điều Hướng</SheetTitle>
-              <nav className="mt-8 flex flex-col gap-4">
-                <Link href="/" className="flex items-center gap-3 outline-none mb-6">
-                  <img src="/logo.png" alt="Shop Lưu Niệm Đà Lạt Logo" className="size-10 object-contain drop-shadow-sm" />
-                  <span className="text-[20px] font-serif font-bold tracking-tight text-primary">{brandName}</span>
-                </Link>
-                <a
-                  href={giftSetUrl}
-                  className="mb-4 inline-flex items-center justify-center rounded-2xl bg-white/60 border border-white/50 px-4 py-3 text-sm font-semibold text-primary hover:bg-white/80 shadow-sm transition-all"
-                >
-                  <Gift className="mr-2 size-4" />
-                  Xem bộ quà tặng
-                </a>
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-2xl px-4 py-3 text-[15px] font-semibold text-foreground/80 hover:bg-white/60 hover:text-primary transition-colors shadow-sm"
-                  >
-                    {link.label}
+            <SheetContent side="left" className="w-[min(86vw,340px)] border-[var(--color-border)] bg-[var(--color-surface)] p-0 text-[var(--color-text-primary)]">
+              <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
+              <div className="flex h-full flex-col px-5 py-6">
+                <div className="mb-8 flex items-center justify-between">
+                  <Link href="/" className="flex items-center gap-3">
+                    <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={44} height={44} className="size-11 object-contain" />
+                    <span className="text-base font-semibold tracking-normal text-[var(--color-text-primary)]">{brandName}</span>
                   </Link>
-                ))}
-              </nav>
+                  <SheetClose className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--color-border)]" aria-label="Đóng menu">
+                    <X className="size-5" aria-hidden="true" />
+                  </SheetClose>
+                </div>
+
+                <nav className="flex flex-col gap-2" aria-label="Điều hướng di động">
+                  {navLinks.map((link) => (
+                    <SheetClose key={link.href} asChild>
+                      <Link
+                        href={link.href}
+                        className="flex min-h-12 items-center rounded-xl px-4 text-[15px] font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-surface-muted)]"
+                      >
+                        {link.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </nav>
+
+                <SheetClose asChild>
+                  <Link
+                    href={giftSetUrl}
+                    className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-hover)]"
+                  >
+                    <Gift className="mr-2 size-4" aria-hidden="true" />
+                    Xem bộ quà tặng
+                  </Link>
+                </SheetClose>
+              </div>
             </SheetContent>
           </Sheet>
 
-          <Link href="/" className="flex items-center gap-3 outline-none transition-transform hover:scale-[1.02] active:scale-95">
-            <img src="/logo.png" alt="Shop Lưu Niệm Đà Lạt Logo" className="size-10 md:size-12 object-contain drop-shadow-sm" />
-            <span className="text-[18px] md:text-[24px] font-serif font-bold tracking-tight text-primary whitespace-nowrap">{brandName}</span>
+          <Link href="/" className="flex min-h-11 items-center gap-3 rounded-full focus-visible:outline-offset-4">
+            <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={48} height={48} className="size-11 object-contain md:size-12" />
+            <span className="hidden text-[17px] font-semibold tracking-normal text-[var(--color-text-primary)] sm:inline">
+              {brandName}
+            </span>
           </Link>
         </div>
 
-        {/* Middle: Desktop Navigation */}
-        <nav className="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-1 md:flex">
+        <nav className="hidden items-center justify-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 shadow-[var(--shadow-sm)] md:flex" aria-label="Điều hướng chính">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-5 py-2.5 text-[14px] font-semibold text-foreground/80 transition-all duration-200 rounded-full hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary hover:shadow-sm"
+              className="nav-link min-h-10 rounded-full px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-3 shrink-0">
-          <a
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
+          <Link
             href={giftSetUrl}
-            className="hidden lg:inline-flex items-center rounded-full bg-white/50 dark:bg-white/10 border border-border/40 px-4 py-2 text-[13px] font-bold text-primary transition hover:bg-white/80 dark:hover:bg-white/20 hover:shadow-sm"
+            className="hidden min-h-11 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-warm-light)] lg:inline-flex"
           >
-            <Gift className="mr-2 size-4" />
+            <Gift className="mr-2 size-4" aria-hidden="true" />
             Bộ quà tặng
-          </a>
-
-          <div className="h-6 w-px bg-foreground/10 hidden lg:block mx-1"></div>
+          </Link>
 
           <ThemeToggle />
 
           <button
             type="button"
-            onClick={openCart}
-            className="relative inline-flex size-10 items-center justify-center rounded-full text-foreground/80 transition-all hover:bg-white/60 dark:hover:bg-white/10 hover:text-primary hover:shadow-sm active:scale-95 bg-white/30 dark:bg-white/5 border border-border/40"
+            onClick={handleCartClick}
+            className="relative inline-flex size-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-light)]"
             aria-label="Mở giỏ hàng"
           >
-            <ShoppingCart className="size-5" />
-            {totalItems > 0 && (
-              <motion.div
+            <ShoppingCart className="size-5" aria-hidden="true" />
+            {isInitialized && isLoggedIn && totalItems > 0 && (
+              <motion.span
                 key={totalItems}
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1"
+                className="absolute -right-1 -top-1"
               >
-                <Badge className="h-5 min-w-[20px] rounded-full bg-secondary px-1.5 text-[10px] font-bold text-white shadow-sm ring-2 ring-white flex items-center justify-center">
+                <Badge className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-warm)] px-1.5 text-[10px] font-semibold text-white">
                   {totalItems}
                 </Badge>
-              </motion.div>
+              </motion.span>
             )}
           </button>
 
           {isLoggedIn ? (
             <DropdownMenu>
-              <DropdownMenuTrigger className="rounded-full outline-none ring-offset-2 transition-transform hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary shadow-sm border border-border/50 bg-white/40 dark:bg-white/10 flex items-center justify-center">
+              <DropdownMenuTrigger className="flex size-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] transition-transform hover:scale-[1.02]">
                 <Avatar className="size-9">
-                  <AvatarFallback className="bg-transparent text-primary font-bold text-sm">
+                  <AvatarFallback className="bg-[var(--color-accent-light)] text-sm font-semibold text-[var(--color-accent)]">
                     {(user?.name ?? "U").slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/50 shadow-lg">
-                <DropdownMenuItem 
-                  className="rounded-xl p-3 cursor-pointer font-semibold"
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl border-[var(--color-border)] bg-[var(--color-surface)] p-2 text-[var(--color-text-primary)] shadow-[var(--shadow-md)]">
+                <DropdownMenuItem
+                  className="cursor-pointer rounded-xl p-3 font-medium"
                   onClick={() => router.push("/account/profile")}
-                > 
+                >
                   {user?.name && user.name !== user.email ? user.name : user?.email || "Tài khoản"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  className="cursor-pointer rounded-xl p-3 font-semibold text-destructive focus:bg-destructive/10 focus:text-destructive mt-1"
+                  className="mt-1 cursor-pointer rounded-xl p-3 font-medium text-destructive focus:bg-destructive/10 focus:text-destructive"
                   onClick={() => setIsLogoutOpen(true)}
                 >
                   Đăng xuất
@@ -164,9 +203,9 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="hidden sm:inline-flex items-center justify-center rounded-full px-5 py-2 text-[14px] font-bold shadow-md hover:shadow-lg transition-all bg-primary text-white hover:bg-primary/90"
+              className="hidden min-h-11 items-center justify-center rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-hover)] sm:inline-flex"
             >
-              <User className="mr-2 size-4" />
+              <User className="mr-2 size-4" aria-hidden="true" />
               Đăng nhập
             </Link>
           )}

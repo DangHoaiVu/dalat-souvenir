@@ -8,9 +8,9 @@ export default function AccountLayout({
 }) {
   return (
     <CustomerAccountGuard>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <SimpleHeader />
-        <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <main>{children}</main>
         </div>
       </div>

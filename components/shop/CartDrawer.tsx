@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -20,6 +20,7 @@ const formatPrice = (price: number): string =>
 
 export default function CartDrawer() {
   const router = useRouter();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const user = useAuthStore((state) => state.user);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -42,6 +43,17 @@ export default function CartDrawer() {
   const selectedCount = selectedItems.reduce((total, item) => total + item.quantity, 0);
 
   const isAllSelected = items.length > 0 && selectedItemIds.length === items.length;
+
+  useEffect(() => {
+    if (!isOpen || isLoggedIn) return;
+
+    closeCart();
+    router.push("/login");
+  }, [closeCart, isLoggedIn, isOpen, router]);
+
+  if (isOpen && !isLoggedIn) {
+    return null;
+  }
 
   const handleToggleAll = () => {
     if (isAllSelected) {

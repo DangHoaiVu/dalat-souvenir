@@ -4,17 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LogOut,
   Package,
   ShoppingCart,
   Tag,
-  LogOut,
   UserRound,
 } from "lucide-react";
-import LogoutConfirmDialog from "@/components/shop/LogoutConfirmDialog";
 
+import LogoutConfirmDialog from "@/components/shop/LogoutConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { supabase } from "@/lib/supabaseClient";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin/products", label: "Sản phẩm", icon: Package },
@@ -61,10 +62,10 @@ export default function AdminSidebar() {
   }, [fetchPendingOrders]);
 
   return (
-    <aside className="flex h-full w-full flex-col bg-[#0F1115] text-white shadow-xl">
-      <div className="border-b border-white/10 px-4 py-4">
-        <p className="text-xl font-bold">Shop Lưu Niệm</p>
-        <p className="text-xs text-white/60">Admin Panel</p>
+    <aside className="flex h-full w-full flex-col bg-[var(--color-surface)] text-[var(--color-text-primary)]">
+      <div className="border-b border-[var(--color-border)] px-5 py-5">
+        <p className="text-lg font-semibold tracking-normal">Shop Lưu Niệm</p>
+        <p className="text-xs text-[var(--color-text-tertiary)]">Admin Panel</p>
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
@@ -75,30 +76,31 @@ export default function AdminSidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                active ? "bg-primary text-white" : "text-white/90 hover:bg-primary/80"
-              }`}
+              className={cn(
+                "flex min-h-11 items-center justify-between rounded-xl px-3 text-sm font-medium transition-colors",
+                active
+                  ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+                  : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]",
+              )}
             >
               <span className="flex items-center gap-2">
                 <Icon className="size-4" />
                 {item.label}
               </span>
               {item.href === "/admin/orders" && pendingOrders > 0 && (
-                <Badge className="bg-red-500 text-white">{pendingOrders}</Badge>
+                <Badge className="bg-[var(--color-warm)] text-white">{pendingOrders}</Badge>
               )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/10 p-3 space-y-2">
-        <div className="flex justify-between px-3">         
-          <ThemeToggle />
-        </div>
+      <div className="space-y-3 border-t border-[var(--color-border)] p-3">
+        <ThemeToggle />
         <LogoutConfirmDialog>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
+            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
           >
             <LogOut className="size-4" />
             Đăng xuất

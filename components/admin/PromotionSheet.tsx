@@ -28,6 +28,7 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { authFetch } from "@/lib/auth-fetch";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import type { Promotion } from "@/types";
@@ -45,7 +46,7 @@ export default function PromotionSheet({
   promotion,
   onSave,
 }: PromotionSheetProps) {
-  const [uploading, setUploading] = useState(false);
+  const uploading = false;
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -169,7 +170,7 @@ export default function PromotionSheet({
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `promo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         
-        const { data, error } = await supabase.storage.from('Promotions').upload(fileName, compressedBlob, {
+        const { error } = await supabase.storage.from('Promotions').upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -182,7 +183,7 @@ export default function PromotionSheet({
         } else {
           finalImageUrl = supabase.storage.from('Promotions').getPublicUrl(fileName).data.publicUrl;
         }
-      } catch (err) {
+      } catch {
         setSaveError('Đã xảy ra lỗi khi xử lý ảnh.');
         setIsSaving(false);
         setSaveStatus("");
@@ -212,7 +213,7 @@ export default function PromotionSheet({
     };
     
     try {
-      const res = await fetch("/api/promotions", {
+      const res = await authFetch("/api/promotions", {
         method: promotion ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -226,7 +227,7 @@ export default function PromotionSheet({
       }
       onSave(result);
       onOpenChange(false);
-    } catch (e) {
+    } catch {
       setSaveError("Lỗi khi lưu khuyến mãi. Vui lòng thử lại.");
       setSaveStatus("");
     } finally {
@@ -256,7 +257,7 @@ export default function PromotionSheet({
       } else {
         setAiError("Không tạo được mô tả. Hãy thử lại.");
       }
-    } catch (e) {
+    } catch {
       setAiError("Lỗi AI. Hãy thử lại.");
     } finally {
       setAiLoading(false);

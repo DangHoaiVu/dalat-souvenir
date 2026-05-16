@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Product } from "@/types";
-import { Badge } from "@/components/ui/badge";
-import GlassButton from "@/components/ui/GlassButton";
 import { useCartStore } from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
 
 interface ProductCardProps {
   product: Product;
@@ -17,8 +17,19 @@ interface ProductCardProps {
   showCategory?: boolean;
 }
 
+const text = {
+  add: "Th\u00eam",
+  added: "\u0110\u00e3 th\u00eam v\u00e0o gi\u1ecf",
+  bestseller: "B\u00e1n ch\u1ea1y",
+  curated: "Tuy\u1ec3n ch\u1ecdn",
+  detail: "Xem chi ti\u1ebft",
+  fallbackCategory: "\u0110\u1eb7c s\u1ea3n \u0110\u00e0 L\u1ea1t",
+  gift: "Qu\u00e0 t\u1eb7ng",
+  new: "M\u1edbi",
+};
+
 const formatPrice = (price: number): string =>
-  `${new Intl.NumberFormat("vi-VN").format(price)}đ`;
+  `${new Intl.NumberFormat("vi-VN").format(price)}\u0111`;
 
 export default function ProductCard({
   product,
@@ -26,10 +37,14 @@ export default function ProductCard({
   showStory = false,
   showCategory = true,
 }: ProductCardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const { addItem } = useCartStore();
-  
+
   if (product.is_for_sale === false) return null;
-  
+
   const activeGift = gift || product.promoted_gift;
 
   const discount = Math.max(
@@ -41,90 +56,84 @@ export default function ProductCard({
     ? product.images[0]
     : product.image || "/placeholder.png";
 
-  const filteredTags = (product.tags ?? []).filter(
-    (tag: string) => tag !== "Bán chạy" && tag !== "Mới"
-  );
+  const tagText = (product.tags ?? []).join(" ").toLowerCase();
+  const badgeLabel = discount > 0
+    ? `-${discount}%`
+    : tagText.includes("m\u1edbi") || tagText.includes("new")
+      ? text.new
+      : tagText.includes("b\u00e1n ch\u1ea1y") || tagText.includes("best")
+        ? text.bestseller
+        : text.curated;
 
   return (
-    <Link href={`/products/${product.product_id}`} className="group block h-full animate-fade-in-up">
-      <div className="h-full cursor-pointer flex flex-col justify-between relative overflow-hidden bg-card rounded-[24px] border border-border shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-border/80">
-        <div className="relative overflow-hidden aspect-[4/5] bg-muted/30">
-          <img
+    <article className="group flex h-full min-w-[260px] snap-start flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] transition duration-200 ease-in-out hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--color-accent)_36%,var(--color-border))] hover:shadow-[var(--shadow-md)]">
+      <Link href={`/products/${product.product_id}`} className="block overflow-hidden" aria-label={`${text.detail} ${product.name}`}>
+        <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-surface-muted)]">
+          <Image
             src={imageSrc}
             alt={product.name}
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+            width={420}
+            height={525}
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 40vw, 82vw"
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-[1.04]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-            {filteredTags.map((tag: string) => (
-              <div key={tag} className="bg-background/80 text-foreground backdrop-blur-md border border-border/50 px-3 py-1 rounded-full text-[11px] font-semibold shadow-sm uppercase tracking-wider">
-                {tag}
-              </div>
-            ))}
-          </div>
-
-          {/* Hover overlay button */}
-          <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out z-20 flex justify-center">
-            <GlassButton
-              variant="pill"
-              className="w-full justify-center bg-background/80 dark:bg-background/50 text-foreground hover:bg-background shadow-md border border-border/50 backdrop-blur-xl"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                addItem(product, 1);
-                toast.success("Đã thêm vào giỏ");
-              }}
-            >
-              <Plus className="size-4 mr-1" />
-              Thêm vào giỏ
-            </GlassButton>
-          </div>
-
+          <span className="absolute left-3 top-3 rounded-full bg-[var(--glass-bg)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-accent)] shadow-[var(--shadow-sm)] backdrop-blur-md">
+            {badgeLabel}
+          </span>
           {activeGift && (
-            <div className="absolute bottom-0 left-0 right-0 bg-secondary/80 text-white text-[10px] font-bold py-2 px-3 flex items-center gap-2 backdrop-blur-xl transition-transform duration-500 group-hover:translate-y-full z-10 border-t border-white/20">
-              <span className="shrink-0 bg-white text-secondary rounded shadow-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider">Quà tặng</span>
-              <span className="truncate uppercase tracking-tight">{activeGift.name}</span>
-            </div>
+            <span className="absolute inset-x-3 bottom-3 truncate rounded-full bg-[var(--color-warm)] px-3 py-2 text-[11px] font-semibold text-white shadow-[var(--shadow-sm)]">
+              {text.gift}: {activeGift.name}
+            </span>
           )}
         </div>
-        
-        <div className="flex flex-col flex-1 p-5 md:p-6 bg-card">
-          <div className="flex-1 space-y-2">
-            {showCategory && (
-              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.25em] font-semibold">
-                {product.category?.name ?? ""}
+      </Link>
+
+      <div className="flex flex-1 flex-col p-5">
+        {showCategory && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-accent)]">
+            {product.category?.name ?? text.fallbackCategory}
+          </p>
+        )}
+        <Link href={`/products/${product.product_id}`} className="mt-2 block">
+          <h3 className="line-clamp-2 text-[17px] font-semibold leading-snug text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-accent)]">
+            {product.name}
+          </h3>
+        </Link>
+
+        {showStory && (
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--color-text-secondary)]">{product.story}</p>
+        )}
+
+        <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+          <div>
+            {product.price < product.comparePrice && (
+              <p className="text-sm text-[var(--color-text-secondary)] line-through">
+                {formatPrice(product.comparePrice)}
               </p>
             )}
-            <h3 className="line-clamp-2 text-[18px] md:text-[20px] font-sans font-bold tracking-tight text-foreground group-hover:text-primary transition-colors leading-[1.15]">
-              {product.name}
-            </h3>
+            <p className="text-lg font-semibold text-[var(--color-text-primary)]">
+              {formatPrice(product.price)}
+            </p>
           </div>
-          
-          {showStory && (
-            <p className="mt-2 line-clamp-2 text-xs italic text-muted-foreground font-serif leading-relaxed">{product.story}</p>
-          )}
-          
-          <div className="flex items-center justify-between gap-2 pt-4 mt-auto border-t border-white/30">
-            <div className="flex flex-col">
-              {product.price < product.comparePrice && (
-                <p className="text-[13px] text-muted-foreground line-through font-medium tracking-tight">
-                  {formatPrice(product.comparePrice)}
-                </p>
-              )}
-              <p className="text-[18px] md:text-[20px] font-bold font-sans text-secondary tracking-tight">
-                {formatPrice(product.price)}
-              </p>
-            </div>
-            {discount > 0 && (
-              <div className="bg-secondary/20 text-secondary border border-secondary/30 font-bold px-2 py-0.5 rounded-full text-[10px] backdrop-blur-md">
-                -{discount}%
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-hover)]"
+            onClick={() => {
+              if (!isInitialized || !isLoggedIn) {
+                router.push(`/login?redirect=${encodeURIComponent(pathname || "/products")}`);
+                return;
+              }
+
+              addItem(product, 1);
+              toast.success(text.added);
+            }}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {text.add}
+          </button>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

@@ -34,12 +34,12 @@ export default function GlassModal({ isOpen, onClose, children, className = "" }
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative pointer-events-auto w-[92vw] max-w-[860px] max-h-[85vh] overflow-y-auto custom-scrollbar rounded-[32px] ${className}`}
+              className={`relative pointer-events-auto w-[92vw] max-w-[860px] max-h-[85vh] overflow-y-auto custom-scrollbar rounded-3xl border border-border/70 bg-card/80 shadow-[var(--shadow-lg)] ${className}`}
             >
               <LiquidGlassPanel variant="modal" className="w-full h-full min-h-[400px]">
                 <button
                   onClick={onClose}
-                  className="absolute top-6 right-6 z-50 flex items-center justify-center size-10 rounded-full bg-white/30 text-foreground hover:bg-white/50 transition-colors backdrop-blur-md border border-white/40 shadow-sm"
+                  className="absolute right-5 top-5 z-50 flex size-10 items-center justify-center rounded-xl border border-border bg-background/75 text-foreground shadow-sm backdrop-blur transition hover:border-primary/35 hover:bg-background"
                   aria-label="Đóng"
                 >
                   <X className="size-5" />

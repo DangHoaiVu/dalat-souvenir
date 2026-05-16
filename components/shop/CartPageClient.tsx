@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, Trash2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 import { supabase } from "@/lib/supabaseClient";
 import { mapProductRow, type SupabaseProductRow } from "@/lib/map-supabase-product";
 import type { Product } from "@/types";
@@ -60,6 +62,7 @@ function formatEtaCountdown(estimatedArrivalAt: string | null, nowMs: number): s
 
 export default function CartPageClient({ initialRecommendations }: CartPageClientProps) {
   void initialRecommendations;
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const isInitialized = useAuthStore((state) => state.isInitialized);
@@ -77,6 +80,13 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !isInitialized) return;
+    if (!isLoggedIn) {
+      router.replace("/login?redirect=/cart");
+    }
+  }, [isInitialized, isLoggedIn, mounted, router]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -241,13 +251,13 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
         }
       }
 
-      const res = await fetch("/api/checkout", {
+      const res = await authFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           items: orderItems,
-          userId: user?.id,
-          address: profileAddress,
+          customerInfo: { address: profileAddress, name: user?.name, phone: user?.phone, paymentMethod: "cod" },
+          couponCode: couponApplied ? "DALATSPECIAL" : "",
           latitude,
           longitude
         })

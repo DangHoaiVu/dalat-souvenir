@@ -168,12 +168,10 @@ export async function fetchRelatedProducts(
 
 export async function fetchActivePromotion(): Promise<ActivePromotion | null> {
   const adminSupabase = createAdminSupabaseClient();
-  
-  // Fetch all active promotions
+
   const { data, error } = await adminSupabase
     .from("promotions")
-    .select("*")
-    .eq("is_active", true);
+    .select("*");
 
   if (error || !data || data.length === 0) return null;
 
@@ -183,6 +181,7 @@ export async function fetchActivePromotion(): Promise<ActivePromotion | null> {
   const todayStr = new Date().toLocaleDateString('en-CA');
   
   const activePromo = promotions.find((p) => {
+    if (p.is_active === false) return false;
     const startStr = new Date(p.start_date).toLocaleDateString('en-CA');
     const endStr = new Date(p.end_date).toLocaleDateString('en-CA');
     

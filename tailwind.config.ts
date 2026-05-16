@@ -28,6 +28,15 @@ const config: Config = {
           DEFAULT: "var(--secondary)",
           foreground: "var(--secondary-foreground)",
         },
+        warm: {
+          DEFAULT: "var(--color-warm)",
+          foreground: "var(--secondary-foreground)",
+          light: "var(--color-warm-light)",
+        },
+        gold: {
+          DEFAULT: "var(--color-gold)",
+          light: "var(--color-gold-light)",
+        },
         muted: {
           DEFAULT: "var(--muted)",
           foreground: "var(--muted-foreground)",

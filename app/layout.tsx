@@ -1,21 +1,31 @@
 import type { Metadata } from "next";
-import "./globals.css";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import { cn } from "@/lib/utils";
-import Providers from "@/app/providers";
+import localFont from "next/font/local";
 
-const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-sans" });
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin", "vietnamese"], variable: "--font-serif" });
+import Providers from "@/app/providers";
+import { cn } from "@/lib/utils";
+import "./globals.css";
+
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-sans",
+  weight: "100 900",
+});
+
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-serif",
+  weight: "100 900",
+});
 
 export const metadata: Metadata = {
   title: {
-    default: "Shop Lưu Niệm Đà Lạt — Quà Tặng & Kỷ Vật Đà Lạt",
-    template: "%s | Shop Lưu Niệm Đà Lạt",
+    default: "Đà Lạt Souvenir — Đặc sản & Quà tặng Đà Lạt",
+    template: "%s | Đà Lạt Souvenir",
   },
   description:
-    "Mua đồ lưu niệm Đà Lạt: móc khóa, postcard, túi vải, đồ len và hộp quà kỷ niệm. Giao hàng toàn quốc.",
+    "Mua đặc sản và quà lưu niệm Đà Lạt: mứt, trà, cà phê, đồ thủ công và hộp quà tuyển chọn. Giao hàng toàn quốc.",
   openGraph: {
-    siteName: "Shop Lưu Niệm Đà Lạt",
+    siteName: "Đà Lạt Souvenir",
     locale: "vi_VN",
   },
   icons: {
@@ -30,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={cn("font-sans scroll-smooth", inter.variable, plusJakarta.variable)}>
-      <body className="antialiased bg-background text-foreground custom-scrollbar font-sans tracking-tight">
+    <html lang="vi" className={cn("font-sans scroll-smooth", geistSans.variable, geistMono.variable)}>
+      <body className="custom-scrollbar bg-background font-sans text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

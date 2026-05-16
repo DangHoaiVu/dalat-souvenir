@@ -18,8 +18,8 @@ export default function GlassCard({
   return (
     <motion.div
       className={cn(
-        "relative overflow-hidden bg-[var(--glass-bg)] backdrop-blur-2xl border border-[var(--glass-border)] shadow-sm ring-1 ring-white/10 dark:ring-white/5 rounded-[28px]",
-        interactive && "transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.01] hover:shadow-xl hover:border-white/50 dark:hover:border-white/20",
+        "relative overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[var(--shadow-sm)] backdrop-blur-xl",
+        interactive && "transition-all duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-md)] hover:border-[color-mix(in_srgb,var(--color-accent)_34%,var(--glass-border))]",
         className
       )}
       {...props}

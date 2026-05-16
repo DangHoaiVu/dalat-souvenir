@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import NextTopLoader from "nextjs-toploader";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
 import { isAdminEmail } from "@/lib/admin-auth";
 
 export default function Providers({
@@ -25,9 +26,23 @@ export default function Providers({
       />
       <Toaster />
       <AuthListener />
+      <CartAuthSync />
       {children}
     </ThemeProvider>
   );
+}
+
+function CartAuthSync() {
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const userId = useAuthStore((state) => state.user?.id);
+  const setCartOwner = useCartStore((state) => state.setOwner);
+
+  useEffect(() => {
+    setCartOwner(isInitialized && isLoggedIn && userId ? String(userId) : null);
+  }, [isInitialized, isLoggedIn, setCartOwner, userId]);
+
+  return null;
 }
 
 function AuthListener() {

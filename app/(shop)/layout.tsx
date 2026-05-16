@@ -17,9 +17,9 @@ export default function ShopLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <CustomerAreaGuard>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <Header />
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
         <Footer />
         <CartDrawer />
         <Toaster richColors />

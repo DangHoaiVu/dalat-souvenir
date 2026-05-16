@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CreditCard, Truck, MapPin, Phone, User, CheckCircle2 } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2 } from "lucide-react";
 
 import GlassModal from "@/components/ui/GlassModal";
 import GlassButton from "@/components/ui/GlassButton";
 import { Input } from "@/components/ui/input";
+import { authFetch } from "@/lib/auth-fetch";
 import { useAuthStore } from "@/stores/authStore";
 import type { Product } from "@/types";
 
@@ -71,12 +72,11 @@ export default function CheckoutModal({
         image: item.product.images?.[0] || item.product.image || "",
       }));
 
-      const res = await fetch("/api/checkout", {
+      const res = await authFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: payload,
-          userId: user?.id,
           customerInfo: formData
         }),
       });
@@ -184,10 +184,10 @@ export default function CheckoutModal({
                   <span className="text-[14px] text-muted-foreground">Thanh toán bằng tiền mặt khi shipper giao hàng tới.</span>
                 </label>
 
-                <label className={`cursor-pointer flex flex-col p-4 rounded-2xl border transition-all ${formData.paymentMethod === 'transfer' ? 'border-primary bg-primary/10 shadow-md' : 'border-border/50 bg-background/50 hover:bg-background'}`}>
+                <label className={`cursor-pointer flex flex-col p-4 rounded-2xl border transition-all ${formData.paymentMethod === 'vnpay' ? 'border-primary bg-primary/10 shadow-md' : 'border-border/50 bg-background/50 hover:bg-background'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-[16px] text-foreground">Chuyển khoản ngân hàng</span>
-                    <input type="radio" name="paymentMethod" value="transfer" checked={formData.paymentMethod === 'transfer'} onChange={handleChange} className="accent-primary size-4" />
+                    <input type="radio" name="paymentMethod" value="vnpay" checked={formData.paymentMethod === 'vnpay'} onChange={handleChange} className="accent-primary size-4" />
                   </div>
                   <span className="text-[14px] text-muted-foreground">Chuyển khoản trực tiếp qua ngân hàng. (Sẽ có nhân viên gọi xác nhận).</span>
                 </label>

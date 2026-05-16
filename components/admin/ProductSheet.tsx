@@ -35,6 +35,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { authFetch } from "@/lib/auth-fetch";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
@@ -54,7 +55,7 @@ export default function ProductSheet({
   onSave,
   categories,
 }: ProductSheetProps) {
-  const [uploading, setUploading] = useState(false);
+  const uploading = false;
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -127,7 +128,7 @@ export default function ProductSheet({
 
   // Helper to compress and resize image in browser
   const compressImage = async (file: File): Promise<Blob | File> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       
@@ -194,7 +195,7 @@ export default function ProductSheet({
         const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         
         console.log("[ProductSheet] Uploading to Supabase bucket 'Products'...");
-        const { data, error } = await supabase.storage.from('Products').upload(fileName, compressedBlob, {
+        const { error } = await supabase.storage.from('Products').upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -239,13 +240,13 @@ export default function ProductSheet({
     try {
       let res;
       if (product) {
-        res = await fetch("/api/products", {
+        res = await authFetch("/api/products", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload, id: product.id || product.product_id }),
         });
       } else {
-        res = await fetch("/api/products", {
+        res = await authFetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -260,7 +261,7 @@ export default function ProductSheet({
       }
       onSave(result);
       onOpenChange(false);
-    } catch (e) {
+    } catch {
       setSaveError("Lỗi khi lưu sản phẩm. Vui lòng thử lại.");
       setSaveStatus("");
     } finally {
@@ -293,7 +294,7 @@ export default function ProductSheet({
       } else {
         setAiError("Không tạo được mô tả. Hãy thử lại.");
       }
-    } catch (e) {
+    } catch {
       setAiError("Lỗi AI. Hãy thử lại.");
     } finally {
       setAiLoading(false);

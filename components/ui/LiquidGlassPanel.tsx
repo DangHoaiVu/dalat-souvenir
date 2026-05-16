@@ -1,11 +1,26 @@
 "use client";
 
 import React, { ReactNode } from "react";
+import { motion } from "framer-motion";
 import LiquidGlass from "liquid-glass-react";
 
-interface LiquidGlassPanelProps extends Partial<any> {
+type LiquidGlassMode = "standard" | "polar" | "prominent" | "shader";
+type LiquidGlassVariant = "hero" | "navbar" | "card" | "modal" | "custom";
+
+interface LiquidGlassOptions {
+  displacementScale?: number;
+  blurAmount?: number;
+  saturation?: number;
+  aberrationIntensity?: number;
+  elasticity?: number;
+  cornerRadius?: number;
+  mode?: LiquidGlassMode;
+  overLight?: boolean;
+}
+
+interface LiquidGlassPanelProps extends LiquidGlassOptions {
   children?: ReactNode;
-  variant?: "hero" | "navbar" | "card" | "modal" | "custom";
+  variant?: LiquidGlassVariant;
   className?: string;
   interactive?: boolean;
 }
@@ -18,12 +33,12 @@ export default function LiquidGlassPanel({
   ...props
 }: LiquidGlassPanelProps) {
   
-  const presets: Record<string, any> = {
+  const presets: Record<LiquidGlassVariant, LiquidGlassOptions> = {
     hero: {
-      displacementScale: 65,
-      blurAmount: 0.6,
-      saturation: 140,
-      aberrationIntensity: 1.5,
+      displacementScale: 42,
+      blurAmount: 0.28,
+      saturation: 132,
+      aberrationIntensity: 0.75,
       elasticity: 0.25,
       cornerRadius: 36,
       mode: "polar",
@@ -62,9 +77,18 @@ export default function LiquidGlassPanel({
   };
 
   const selectedPreset = presets[variant];
+  const isHero = variant === "hero";
+  const tintClass = isHero
+    ? "bg-[var(--color-glass)] opacity-10"
+    : "bg-[var(--color-glass)]";
   
   return (
-    <div className={`relative ${className} ${interactive ? "transition-all duration-300 hover:scale-[1.01]" : ""}`}>
+    <motion.div
+      initial={isHero ? { opacity: 0, y: 18 } : false}
+      animate={isHero ? { opacity: 1, y: 0 } : undefined}
+      transition={isHero ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] } : undefined}
+      className={`relative ${className} ${interactive ? "transition-all duration-300 hover:scale-[1.01]" : ""}`}
+    >
       <div className="absolute inset-0 z-0">
         <LiquidGlass
           displacementScale={props.displacementScale ?? selectedPreset.displacementScale}
@@ -81,13 +105,13 @@ export default function LiquidGlassPanel({
       
       {/* Uniform Tint Layer for Readability */}
       <div 
-        className="pointer-events-none absolute inset-0 z-0 bg-white/40 dark:bg-[#0F1115]/60" 
+        className={`pointer-events-none absolute inset-0 z-0 ${tintClass}`}
         style={{ borderRadius: "inherit" }} 
       />
 
       <div className="relative z-10 w-full h-full">
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 }

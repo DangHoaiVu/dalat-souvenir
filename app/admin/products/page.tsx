@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +8,7 @@ import ProductSheet from "@/components/admin/ProductSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   Table,
   TableBody,
@@ -23,12 +22,12 @@ import type { Product, Category } from "@/types";
 const formatPrice = (value: number) => `${(value ?? 0).toLocaleString("vi-VN")}đ`;
 
 export default function Page() {
-  const [list, setList] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [list, setList] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [openSheet, setOpenSheet] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -58,7 +57,7 @@ export default function Page() {
     [list, search, category],
   );
 
-  const onSave = (payload: any) => {
+  const onSave = (payload: Product) => {
     const idField = payload.product_id ? 'product_id' : 'id';
     setList((prev) => {
       const exists = prev.some((item) => item[idField] === payload[idField]);
@@ -177,9 +176,18 @@ export default function Page() {
                       variant="ghost"
                       size="icon-sm"
                       className="text-destructive"
-                      onClick={() =>
-                        setList((prev) => prev.filter((item) => (item.product_id || item.id) !== (product.product_id || product.id)))
-                      }
+                      onClick={async () => {
+                        const id = product.product_id || product.id;
+                        if (!id || !confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+                        const res = await authFetch(`/api/products?id=${id}`, { method: "DELETE" });
+                        if (res.ok) {
+                          setList((prev) => prev.filter((item) => (item.product_id || item.id) !== id));
+                          toast.success("Đã xóa sản phẩm");
+                        } else {
+                          const data = await res.json().catch(() => null);
+                          toast.error(data?.error || "Không thể xóa sản phẩm");
+                        }
+                      }}
                     >
                       <Trash2 className="size-4" />
                     </Button>

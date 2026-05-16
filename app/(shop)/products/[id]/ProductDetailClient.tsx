@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, Star, ChevronRight, Package, Truck, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import ProductCard from "@/components/shop/ProductCard";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-
 import { useCartStore } from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
 import type { Product } from "@/types";
 import GlassButton from "@/components/ui/GlassButton";
 import GlassCard from "@/components/ui/GlassCard";
@@ -25,6 +25,9 @@ export default function ProductDetailClient({
   product: Product;
   relatedProducts: Product[];
 }) {
+  const router = useRouter();
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const { addItem, openCart } = useCartStore();
   const gallery =
     product.images && product.images.length > 0
@@ -199,6 +202,11 @@ export default function ProductDetailClient({
                 className="w-full"
                 disabled={product.stock <= 0}
                 onClick={() => {
+                  if (!isInitialized || !isLoggedIn) {
+                    router.push(`/login?redirect=${encodeURIComponent(`/products/${product.product_id}`)}`);
+                    return;
+                  }
+
                   addItem(product, quantity);
                   openCart();
                   toast.success("Đã thêm vào giỏ hàng", {

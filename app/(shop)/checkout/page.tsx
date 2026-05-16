@@ -3,7 +3,7 @@
 
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cartProductId } from "@/lib/cart-product-id";
+import { authFetch } from "@/lib/auth-fetch";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -37,6 +38,8 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 export default function Page() {
   const router = useRouter();
   const { items, totalPrice } = useCartStore();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const [couponCode, setCouponCode] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -67,6 +70,13 @@ export default function Page() {
 
   const clearCart = useCartStore((state) => state.clearCart);
 
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (!isLoggedIn) {
+      router.replace("/login?redirect=/checkout");
+    }
+  }, [isInitialized, isLoggedIn, router]);
+
   const submitOrder = async (formData: CheckoutFormValues) => {
     try {
       // Prepare items for API
@@ -77,14 +87,13 @@ export default function Page() {
         name: item.product.name,
         image: item.product.images?.[0] || item.product.image || '',
       }));
-      const { user } = useAuthStore.getState();
-      const res = await fetch("/api/checkout", {
+      const res = await authFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           items: orderItems, 
-          form: formData,
-          userId: user?.id
+          customerInfo: formData,
+          couponCode,
         }),
       });
       
@@ -97,7 +106,7 @@ export default function Page() {
 
       clearCart();
       router.push(`/checkout/success?orderId=${data.orderId}`);
-    } catch (e) {
+    } catch {
       alert('Có lỗi xảy ra khi đặt hàng.');
     }
   };

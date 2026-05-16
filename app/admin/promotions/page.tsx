@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Promotion } from "@/types";
 import PromotionSheet from "@/components/admin/PromotionSheet";
+import { authFetch } from "@/lib/auth-fetch";
 
 const formatPrice = (value: number) => `${(value ?? 0).toLocaleString("vi-VN")}đ`;
 
@@ -32,7 +33,7 @@ export default function PromotionsPage() {
       } else {
         toast.error("Lỗi khi tải danh sách khuyến mãi");
       }
-    } catch (error) {
+    } catch {
       toast.error("Lỗi kết nối server");
     } finally {
       setIsLoading(false);
@@ -188,14 +189,14 @@ export default function PromotionsPage() {
                               e.stopPropagation();
                               if (confirm("Bạn có chắc chắn muốn xóa khuyến mãi này?")) {
                                 try {
-                                  const res = await fetch(`/api/promotions?id=${promo.promotion_id}`, { method: "DELETE" });
+                                  const res = await authFetch(`/api/promotions?id=${promo.promotion_id}`, { method: "DELETE" });
                                   if (res.ok) {
                                     setPromotions(prev => prev.filter(p => p.promotion_id !== promo.promotion_id));
                                     toast.success("Đã xóa khuyến mãi");
                                   } else {
                                     toast.error("Không thể xóa khuyến mãi");
                                   }
-                                } catch (e) {
+                                } catch {
                                   toast.error("Lỗi khi xóa khuyến mãi");
                                 }
                               }

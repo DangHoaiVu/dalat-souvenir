@@ -42,6 +42,7 @@ const PROMPTS = {
     return `Viết mô tả khuyến mãi cho cửa hàng Shop Lưu Niệm Đà Lạt - bán đồ lưu niệm và quà tặng Đà Lạt bằng tiếng Việt cho chương trình tên "${promotionName}".\nThông tin tham chiếu:\n- Sản phẩm đang nằm trong khuyến mãi: ${productsText}\n- Giá cố định hiện tại: ${fixedPriceText}\n\nYêu cầu:\n- Viết dài hơn mô tả sản phẩm thông thường, khoảng 4-6 đoạn ngắn.\n- Giọng văn bán hàng tự nhiên, rõ lợi ích, nhấn mạnh điểm nổi bật của nhóm sản phẩm.\n- Nếu có danh sách sản phẩm, hãy đề cập khéo léo theo nhóm hoặc tiêu biểu.\n- Không thêm lời mở đầu/kết luận kiểu "Dưới đây là...".\n- Chỉ trả về phần mô tả hoàn chỉnh.`;
   },
 };
+type PromptType = keyof typeof PROMPTS;
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -54,8 +55,7 @@ export async function POST(req: Request) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   let prompt = "";
   if (type in PROMPTS) {
-    // @ts-ignore
-    prompt = PROMPTS[type](params);
+    prompt = PROMPTS[type as PromptType](params as never);
   } else {
     return NextResponse.json({ error: "Unknown prompt type" }, { status: 400 });
   }
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     const text = result.response.text().trim();
     const formatted = type === "promotion" ? formatIntoParagraphs(text) : text;
     return NextResponse.json({ description: formatted });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
   }
 }

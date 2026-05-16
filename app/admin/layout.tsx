@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
-import AdminGuard from "@/components/admin/AdminGuard";
 import type { Metadata } from "next";
+
+import AdminGuard from "@/components/admin/AdminGuard";
 
 const AdminSidebar = dynamic(() => import("@/components/admin/AdminSidebar"), {
   loading: () => <div className="h-full w-full animate-pulse bg-muted/20" />,
@@ -23,15 +24,18 @@ export default function AdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <AdminGuard>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <aside className="hidden md:block sticky top-0 h-screen w-[240px] border-r">
+      <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+        <aside className="sticky top-0 hidden h-screen w-[256px] border-r border-[var(--color-border)] md:block">
           <AdminSidebar />
         </aside>
-        <div className="flex-1">
-          <header className="sticky top-0 z-40 flex h-14 items-center border-b bg-card px-4">
-            <h1 className="font-semibold">Admin</h1>
+        <div className="min-w-0 flex-1">
+          <header className="sticky top-0 z-40 flex h-16 items-center border-b border-[var(--color-border)] bg-[var(--glass-bg)] px-5 shadow-[var(--shadow-sm)] backdrop-blur-xl">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-accent)]">Dashboard</p>
+              <h1 className="text-base font-semibold tracking-normal">Quản trị cửa hàng</h1>
+            </div>
           </header>
-          <main className="p-4">{children}</main>
+          <main className="p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </AdminGuard>

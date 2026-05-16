@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 import { createAdminSupabaseClient } from "@/lib/supabaseClient";
 import { mapProductRow, type SupabaseProductRow } from "@/lib/map-supabase-product";
+import { requireAdmin } from "@/lib/server-auth";
 import type { Address, Order, Product } from "@/types";
 
 const supabase = createAdminSupabaseClient();
@@ -157,41 +159,13 @@ async function calculateRoadDistanceKm(
   return Number(meters) / 1000;
 }
 
-async function completeOverdueDeliveries(nowIso: string) {
-  const { data: overdueRows, error: overdueError } = await supabase
-    .from("orders")
-    .select("order_id")
-    .eq("status", "delivering")
-    .lte("estimated_arrival_at", nowIso)
-    .limit(50);
-
-  if (overdueError) {
-    console.warn("[API/orders] Failed to scan overdue deliveries", overdueError);
-    return;
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const overdueIds = (overdueRows ?? []).map((row) => row.order_id).filter(Boolean);
-  if (!overdueIds.length) {
-    return;
-  }
-
-  for (const overdueId of overdueIds) {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "completed" })
-      .eq("order_id", overdueId)
-      .eq("status", "delivering");
-
-    if (error) {
-      console.warn("[API/orders] Failed to auto-complete overdue order", { overdueId, error });
-    }
-  }
-}
-
-export async function GET() {
   try {
-    await completeOverdueDeliveries(new Date().toISOString());
-
     const { data: orderRows, error: orderError } = await supabase
       .from("orders")
       .select("order_id, user_id, total_price, created_at, status, delivery_started_at, estimated_arrival_at, customer_name, customer_phone, customer_address, payment_method")
@@ -315,7 +289,7 @@ export async function GET() {
         const shippingFee = Math.max(total - subtotal, 0);
         const profile = row.user_id ? profileMap.get(row.user_id) : undefined;
         
-        let shippingAddress = buildAddress(profile);
+        const shippingAddress = buildAddress(profile);
         
         // Override with explicit order customer info if available (useful for guests)
         if (row.customer_name) shippingAddress.name = row.customer_name;
@@ -333,7 +307,7 @@ export async function GET() {
           status: mapDbStatusToUiStatus(row.status),
           deliveryStartedAt: row.delivery_started_at ?? undefined,
           estimatedArrivalAt: row.estimated_arrival_at ?? undefined,
-          paymentMethod: (row.payment_method as any) || "cod",
+          paymentMethod: row.payment_method === "vnpay" ? "vnpay" : "cod",
           paymentStatus: "unpaid",
           items: itemsForOrder,
           subtotal,
@@ -360,7 +334,12 @@ type UpdateOrderPayload = {
   sellerLongitude?: number;
 };
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const payload = (await request.json()) as UpdateOrderPayload;
     const orderId = String(payload.orderId ?? "").trim();
