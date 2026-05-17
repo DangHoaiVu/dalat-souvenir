@@ -306,7 +306,7 @@ export default function ProductSheet({
       <SheetContent 
         side="right" 
         showCloseButton={false}
-        className="w-full sm:max-w-[540px] p-0 overflow-hidden border-l border-border bg-white/40 dark:bg-zinc-950/40 backdrop-blur-3xl shadow-2xl"
+        className="w-full !max-w-none overflow-hidden border-l border-border bg-white/40 p-0 shadow-2xl backdrop-blur-3xl sm:!w-[760px] xl:!w-[920px] dark:bg-zinc-950/40"
       >
         <div className="flex flex-col h-full">
           {/* Custom Decorative Header Background */}
@@ -341,7 +341,7 @@ export default function ProductSheet({
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-8 pb-32 custom-scrollbar">
+          <div className="grid flex-1 gap-6 overflow-y-auto px-6 py-4 pb-32 custom-scrollbar lg:grid-cols-2 lg:items-start">
             {/* Media Section */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 mb-1">
@@ -425,13 +425,13 @@ export default function ProductSheet({
             </section>
 
             {/* Basic Info Section */}
-            <section className="space-y-4 pt-4 border-t border-white/5">
+            <section className="space-y-4 border-t border-white/5 pt-4 lg:border-t-0 lg:pt-0">
               <div className="flex items-center gap-2 mb-1">
                 <Info className="size-4 text-primary" />
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Thông tin cơ bản</h3>
               </div>
               
-              <div className="grid gap-5">
+              <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Tên sản phẩm</Label>
                   <Input 
@@ -470,13 +470,13 @@ export default function ProductSheet({
             </section>
 
             {/* Pricing & Inventory Section */}
-            <section className="space-y-4 pt-4 border-t border-white/5">
+            <section className="space-y-4 border-t border-white/5 pt-4 lg:col-span-2">
               <div className="flex items-center gap-2 mb-1">
                 <CircleDollarSign className="size-4 text-primary" />
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Giá & Kho hàng</h3>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Giá bán (VNĐ)</Label>
                   <div className="relative">
@@ -522,7 +522,7 @@ export default function ProductSheet({
                     </div>
                   </>
                 ) : (
-                  <div className="col-span-2 space-y-2">
+                  <div className="space-y-2 sm:col-span-2 xl:col-span-2">
                     <Label className="text-sm font-medium">Tồn kho ban đầu</Label>
                     <div className="relative">
                       <Input 
@@ -540,7 +540,7 @@ export default function ProductSheet({
             </section>
 
             {/* Description Section */}
-            <section className="space-y-4 pt-4 border-t border-white/5">
+            <section className="space-y-4 border-t border-white/5 pt-4 lg:col-span-2">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-4 text-primary" />
@@ -587,7 +587,7 @@ export default function ProductSheet({
             </section>
 
             {saveError && (
-              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive lg:col-span-2">
                 <Info className="size-4 shrink-0" />
                 {saveError}
               </div>

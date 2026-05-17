@@ -169,6 +169,7 @@ export async function GET(req: NextRequest) {
     const { data: orderRows, error: orderError } = await supabase
       .from("orders")
       .select("order_id, user_id, total_price, created_at, status, delivery_started_at, estimated_arrival_at, customer_name, customer_phone, customer_address, payment_method")
+      .neq("status", "cancelled")
       .order("created_at", { ascending: false })
       .limit(200);
 

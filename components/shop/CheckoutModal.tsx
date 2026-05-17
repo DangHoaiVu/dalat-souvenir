@@ -10,7 +10,9 @@ import GlassModal from "@/components/ui/GlassModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authFetch } from "@/lib/auth-fetch";
+import { isSupabaseProductId } from "@/lib/product-id";
 import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
 import type { Product } from "@/types";
 
 interface CartItem {
@@ -38,8 +40,10 @@ export default function CheckoutModal({
 }: CheckoutModalProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const removeItem = useCartStore((state) => state.removeItem);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<"form" | "success">("form");
+  const [orderMeta, setOrderMeta] = useState<{ orderId: string; code: string } | null>(null);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: "",
@@ -62,6 +66,15 @@ export default function CheckoutModal({
 
     try {
       setIsSubmitting(true);
+      const invalidItems = items.filter((item) => !isSupabaseProductId(item.product.product_id));
+      if (invalidItems.length > 0) {
+        invalidItems.forEach((item) => removeItem(item.product.product_id));
+        toast.error("Giỏ hàng có sản phẩm cũ không còn hợp lệ", {
+          description: "Mình đã xóa sản phẩm mẫu khỏi giỏ. Vui lòng thêm lại sản phẩm từ danh sách hiện tại rồi đặt hàng.",
+        });
+        return;
+      }
+
       const payload = items.map((item) => ({
         productId: item.product.product_id,
         amount: item.quantity,
@@ -84,6 +97,23 @@ export default function CheckoutModal({
         return;
       }
 
+      setOrderMeta({
+        orderId: String(data.orderId ?? ""),
+        code: String(data.code || data.orderId || ""),
+      });
+      if (data.orderId) {
+        try {
+          const current = JSON.parse(window.localStorage.getItem("shopluuniem-recent-order-ids") || "[]");
+          const ids = Array.isArray(current) ? current.filter((id): id is string => typeof id === "string") : [];
+          const orderId = String(data.orderId);
+          window.localStorage.setItem(
+            "shopluuniem-recent-order-ids",
+            JSON.stringify([orderId, ...ids.filter((id) => id !== orderId)].slice(0, 8)),
+          );
+        } catch {
+          window.localStorage.setItem("shopluuniem-recent-order-ids", JSON.stringify([String(data.orderId)]));
+        }
+      }
       setStep("success");
       onSuccess();
     } catch (error) {
@@ -100,6 +130,12 @@ export default function CheckoutModal({
     router.push("/products");
   };
 
+  const handleViewOrders = () => {
+    setStep("form");
+    onClose();
+    router.push(orderMeta?.orderId ? `/account/orders?orderId=${encodeURIComponent(orderMeta.orderId)}` : "/account/orders");
+  };
+
   if (step === "success") {
     return (
       <GlassModal isOpen={isOpen} onClose={handleFinish} className="max-w-md">
@@ -112,9 +148,19 @@ export default function CheckoutModal({
             Cảm ơn bạn đã mua sắm tại Shop Lưu Niệm Đà Lạt. Chúng tôi sẽ liên hệ qua số{" "}
             <strong>{formData.phone}</strong> để xác nhận đơn hàng sớm nhất.
           </p>
-          <Button className="w-full" onClick={handleFinish}>
-            Tiếp tục mua sắm
-          </Button>
+          {orderMeta?.code && (
+            <div className="mb-6 w-full rounded-lg border border-[--color-border] bg-surface-muted p-3 text-sm text-secondary">
+              Mã đơn hàng: <span className="font-bold text-primary">{orderMeta.code}</span>
+            </div>
+          )}
+          <div className="grid w-full gap-2 sm:grid-cols-2">
+            <Button variant="outline" className="w-full" onClick={handleViewOrders}>
+              Xem lịch sử đơn
+            </Button>
+            <Button className="w-full" onClick={handleFinish}>
+              Tiếp tục mua sắm
+            </Button>
+          </div>
         </div>
       </GlassModal>
     );

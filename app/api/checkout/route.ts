@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getOptionalUser } from '@/lib/server-auth';
+import { isSupabaseProductId } from '@/lib/product-id';
 
 // Supabase configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -38,18 +38,10 @@ function normalizePaymentMethod(value?: string) {
   return value === "vnpay" ? "vnpay" : "cod";
 }
 
-function createUserClient(token: string) {
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
+function buildOrderCode(orderId?: string | null) {
+  if (!orderId) return "";
+  const snippet = orderId.replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase();
+  return snippet ? `#${snippet}` : "";
 }
 
 export async function POST(req: NextRequest) {
@@ -62,7 +54,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No items to purchase' }, { status: 400 });
     }
 
-    const { user, token } = await getOptionalUser(req);
+    const { user } = await getOptionalUser(req);
     const userId = user?.id ?? null;
 
     const quantities = new Map<string, number>();
@@ -71,6 +63,15 @@ export async function POST(req: NextRequest) {
       const quantity = Math.max(1, Math.floor(Number(item.amount ?? item.quantity ?? 1)));
       if (!productId || !Number.isFinite(quantity)) {
         return NextResponse.json({ error: "Invalid checkout item" }, { status: 400 });
+      }
+      if (!isSupabaseProductId(productId)) {
+        return NextResponse.json(
+          {
+            error: "Sản phẩm trong giỏ hàng không còn hợp lệ",
+            details: "Vui lòng xóa sản phẩm cũ khỏi giỏ và thêm lại sản phẩm từ danh sách hiện tại.",
+          },
+          { status: 400 },
+        );
       }
       quantities.set(productId, (quantities.get(productId) ?? 0) + quantity);
     }
@@ -128,13 +129,13 @@ export async function POST(req: NextRequest) {
       customer_phone: customerInfo?.phone || null,
       customer_address: customerAddress,
       payment_method: normalizePaymentMethod(customerInfo?.paymentMethod),
+      status: "pending",
     };
 
-    let canAttachUserToOrder = Boolean(userId);
+    const canAttachUserToOrder = Boolean(userId);
 
-    if (userId && token && customerInfo) {
-      const userSupabase = createUserClient(token);
-      const { error: profileError } = await userSupabase.from('profiles').upsert({
+    if (userId && customerInfo) {
+      const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: userId,
         full_name: customerInfo.name,
         phone_number: customerInfo.phone,
@@ -142,8 +143,7 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id' });
       
       if (profileError) {
-        canAttachUserToOrder = false;
-        console.warn("Could not upsert profile; creating checkout order without user_id:", profileError);
+        console.warn("Could not upsert profile before checkout:", profileError);
       }
     }
     
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order items insert failed', details: itemsInsertError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, orderId, subtotal, discount, shippingFee, total });
+    return NextResponse.json({ success: true, orderId, code: buildOrderCode(orderId), subtotal, discount, shippingFee, total });
   } catch (e) {
     console.error('SERVER - Checkout error:', e);
     return NextResponse.json({ error: 'Unexpected error', details: String(e) }, { status: 500 });

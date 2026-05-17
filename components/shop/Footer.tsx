@@ -18,10 +18,10 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer id="contact" className="border-t border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[1680px] gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_1fr] lg:px-10 2xl:px-12">
         <div>
           <Link href="/" className="inline-flex min-h-11 items-center gap-3">
-            <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={48} height={48} className="size-12 object-contain" loading="lazy" />
+            <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={48} height={48} className="size-12 rounded-full object-contain" loading="lazy" />
             <span className="text-lg font-semibold tracking-normal text-[var(--color-text-primary)]">Đà Lạt Souvenir</span>
           </Link>
           <p className="mt-5 max-w-sm text-sm leading-7">
@@ -82,7 +82,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-xs sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-[1680px] flex-col gap-3 px-4 py-5 text-xs sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10 2xl:px-12">
           <p>© {new Date().getFullYear()} Đà Lạt Souvenir. Cảm ơn bạn đã ghé thăm.</p>
           <div className="flex gap-4">
             <Link href="#" className="min-h-10 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]">

@@ -14,6 +14,7 @@ import { OrderRowSkeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/auth-fetch";
 import { cartProductId } from "@/lib/cart-product-id";
 import { mapProductRow, type SupabaseProductRow } from "@/lib/map-supabase-product";
+import { isSupabaseProductId } from "@/lib/product-id";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
@@ -199,6 +200,13 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
 
     try {
       setIsSubmitting(true);
+      const invalidItems = selectedItems.filter((item) => !isSupabaseProductId(item.product.product_id));
+      if (invalidItems.length > 0) {
+        invalidItems.forEach((item) => removeItem(item.product.product_id));
+        alert("Giỏ hàng có sản phẩm cũ không còn hợp lệ. Mình đã xóa sản phẩm mẫu khỏi giỏ, vui lòng thêm lại sản phẩm từ danh sách hiện tại.");
+        return;
+      }
+
       const orderItems = selectedItems.map((item) => ({
         productId: item.product.product_id,
         amount: item.quantity,
@@ -241,6 +249,20 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
       if (!res.ok) {
         alert(data.error || data.details || "Đặt hàng thất bại. Vui lòng thử lại.");
         return;
+      }
+
+      if (data.orderId) {
+        try {
+          const current = JSON.parse(window.localStorage.getItem("shopluuniem-recent-order-ids") || "[]");
+          const ids = Array.isArray(current) ? current.filter((id): id is string => typeof id === "string") : [];
+          const orderId = String(data.orderId);
+          window.localStorage.setItem(
+            "shopluuniem-recent-order-ids",
+            JSON.stringify([orderId, ...ids.filter((id) => id !== orderId)].slice(0, 8)),
+          );
+        } catch {
+          window.localStorage.setItem("shopluuniem-recent-order-ids", JSON.stringify([String(data.orderId)]));
+        }
       }
 
       removeSelectedItems();

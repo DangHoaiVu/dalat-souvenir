@@ -82,7 +82,7 @@ export default function Header() {
         Bỏ qua đến nội dung chính
       </a>
 
-      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:h-20 lg:px-8">
+      <div className="mx-auto grid h-16 max-w-[1680px] grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:h-20 lg:px-10 2xl:px-12">
         <Link href="/" className="flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-offset-4">
           <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={56} height={56} className="size-12 rounded-full object-contain md:size-[53px]" />
           <span className="hidden text-base font-bold text-accent sm:inline md:text-lg">

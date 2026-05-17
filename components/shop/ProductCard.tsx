@@ -8,6 +8,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { isSupabaseProductId } from "@/lib/product-id";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 import type { Product } from "@/types";
@@ -17,6 +19,7 @@ interface ProductCardProps {
   gift?: Product;
   showStory?: boolean;
   showCategory?: boolean;
+  className?: string;
 }
 
 const text = {
@@ -38,12 +41,14 @@ export default function ProductCard({
   gift,
   showStory = false,
   showCategory = true,
+  className,
 }: ProductCardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const addItem = useCartStore((state) => state.addItem);
+  const canOrderProduct = isSupabaseProductId(product.product_id);
 
   if (product.is_for_sale === false) return null;
 
@@ -70,12 +75,19 @@ export default function ProductCard({
       return;
     }
 
+    if (!canOrderProduct) {
+      toast.error("Sản phẩm mẫu không thể đặt hàng", {
+        description: "Vui lòng chọn sản phẩm thật từ danh sách sản phẩm hiện tại.",
+      });
+      return;
+    }
+
     addItem(product, 1);
     toast.success(text.added);
   };
 
   return (
-    <Card variant="interactive" className="group h-full min-w-[240px] snap-start p-0">
+    <Card variant="interactive" className={cn("group h-full min-w-[240px] snap-start p-0", className)}>
       <div className="relative overflow-hidden rounded-t-lg bg-surface-muted">
         <Link href={`/products/${product.product_id}`} aria-label={`${text.detail} ${product.name}`}>
           <div className="relative aspect-[4/5] overflow-hidden">
@@ -110,7 +122,7 @@ export default function ProductCard({
         )}
 
         <div className="absolute inset-x-0 bottom-0 hidden translate-y-full p-3 transition-transform duration-200 group-hover:translate-y-0 md:block">
-          <Button type="button" className="w-full shadow-lg" onClick={addToCart}>
+          <Button type="button" className="w-full shadow-lg" onClick={addToCart} disabled={!canOrderProduct}>
             <ShoppingCart className="size-4" />
             {text.add}
           </Button>
@@ -148,6 +160,7 @@ export default function ProductCard({
             size="icon"
             className="md:hidden"
             onClick={addToCart}
+            disabled={!canOrderProduct}
             aria-label={text.add}
           >
             <Plus className="size-4" />

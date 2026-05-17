@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { authFetch } from "@/lib/auth-fetch";
 import { cartProductId } from "@/lib/cart-product-id";
+import { isSupabaseProductId } from "@/lib/product-id";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 
@@ -39,6 +40,7 @@ const steps = ["Thông tin", "Thanh toán", "Xác nhận"];
 export default function Page() {
   const router = useRouter();
   const { items, totalPrice } = useCartStore();
+  const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const isInitialized = useAuthStore((state) => state.isInitialized);
@@ -78,6 +80,13 @@ export default function Page() {
   const submitOrder = async (formData: CheckoutFormValues) => {
     try {
       setIsSubmitting(true);
+      const invalidItems = items.filter((item) => !isSupabaseProductId(item.product.product_id));
+      if (invalidItems.length > 0) {
+        invalidItems.forEach((item) => removeItem(item.product.product_id));
+        alert("Giỏ hàng có sản phẩm cũ không còn hợp lệ. Mình đã xóa sản phẩm mẫu khỏi giỏ, vui lòng thêm lại sản phẩm từ danh sách hiện tại.");
+        return;
+      }
+
       const orderItems = items.map((item) => ({
         productId: item.product.product_id,
         amount: item.quantity,
@@ -99,7 +108,11 @@ export default function Page() {
       }
 
       clearCart();
-      router.push(`/checkout/success?orderId=${data.orderId}`);
+      const params = new URLSearchParams({
+        orderId: String(data.orderId),
+        code: String(data.code || data.orderId),
+      });
+      router.push(`/checkout/success?${params.toString()}`);
     } catch {
       alert("Có lỗi xảy ra khi đặt hàng.");
     } finally {

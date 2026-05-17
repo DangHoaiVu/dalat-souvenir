@@ -60,8 +60,8 @@ export default function ProductsPage() {
 
 function ProductsPageFallback() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="mx-auto max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10 2xl:px-12">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <ProductCardSkeleton key={index} />
         ))}
@@ -199,7 +199,7 @@ function ProductsPageContent() {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1680px] px-4 py-10 sm:px-6 lg:px-10 2xl:px-12">
       <div className="mb-8 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Cửa hàng</p>
@@ -257,23 +257,27 @@ function ProductsPageContent() {
         </div>
       )}
 
-      <div className="grid items-start gap-8 md:grid-cols-[280px_1fr]">
+      <div className="grid items-start gap-8 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="sticky top-28 hidden md:block">
-          <Card variant="flat" className="p-6">
+          <Card variant="flat" className="border-[--color-border-strong] p-6 shadow-md">
             {filterPanel}
           </Card>
         </aside>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.product_id} product={product} />
+              <ProductCard
+                key={product.product_id}
+                product={product}
+                className="border-[--color-border-strong] shadow-md hover:border-accent/60"
+              />
             ))}
           </div>
         ) : (

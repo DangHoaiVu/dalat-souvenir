@@ -41,7 +41,7 @@ export default function StoryPage() {
               width={512}
               height={192}
               priority
-              className="mx-auto w-64 sm:w-80 md:w-[32rem] h-auto drop-shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-50 duration-1000 delay-300"
+              className="mx-auto w-64 rounded-full sm:w-80 md:w-[32rem] h-auto drop-shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-50 duration-1000 delay-300"
             />
             <h1 className="text-6xl font-black tracking-tighter sm:text-8xl md:text-9xl leading-[0.85] drop-shadow-2xl">
               Từ Chuyến Đi<br />Đến Món Quà
