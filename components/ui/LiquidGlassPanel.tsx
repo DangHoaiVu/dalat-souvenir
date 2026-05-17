@@ -100,7 +100,9 @@ export default function LiquidGlassPanel({
           mode={props.mode ?? selectedPreset.mode}
           overLight={props.overLight ?? selectedPreset.overLight}
           {...props}
-        />
+        >
+          {null}
+        </LiquidGlass>
       </div>
       
       {/* Uniform Tint Layer for Readability */}

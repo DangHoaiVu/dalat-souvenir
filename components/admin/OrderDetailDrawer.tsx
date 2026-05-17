@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { ExternalLink, MapPin, Phone, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ export default function OrderDetailDrawer({
               {/* QR Code Section */}
               <div className="flex flex-col items-center justify-center gap-3 py-6 bg-accent/10 dark:bg-white/5 rounded-[1.5rem] border border-border dark:border-white/5 transition-colors">
                 <div className="relative group/qr">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
                       order.shippingAddress.latitude && order.shippingAddress.longitude 
@@ -112,10 +114,12 @@ export default function OrderDetailDrawer({
                 <div key={item.id} className="group flex items-center gap-4 rounded-[1.5rem] border border-border dark:border-white/5 bg-accent/20 dark:bg-zinc-900/50 p-3 transition-all hover:bg-accent/30 dark:hover:bg-zinc-900 hover:border-border dark:hover:border-white/10">
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-200 dark:bg-zinc-800 border border-border/50 dark:border-white/5">
                     {item.product.image ? (
-                      <img
+                      <Image
                         src={item.product.image}
                         alt={item.product.name}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                        fill
+                        sizes="56px"
+                        className="object-cover transition-transform group-hover:scale-110"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">

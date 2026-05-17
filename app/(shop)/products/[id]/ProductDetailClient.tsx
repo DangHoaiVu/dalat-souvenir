@@ -1,19 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Star, ChevronRight, Package, Truck, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { ChevronRight, Package, RotateCcw, ShoppingCart, Star, Truck } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import ProductCard from "@/components/shop/ProductCard";
 import { Badge } from "@/components/ui/badge";
-import { useCartStore } from "@/stores/cartStore";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
 import type { Product } from "@/types";
-import GlassButton from "@/components/ui/GlassButton";
-import GlassCard from "@/components/ui/GlassCard";
 
 const formatPrice = (price: number): string =>
   `${new Intl.NumberFormat("vi-VN").format(price)}đ`;
@@ -36,8 +36,10 @@ export default function ProductDetailClient({
         ? [product.image]
         : ["https://picsum.photos/seed/product-placeholder/900/900"];
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(gallery[0] ?? "");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
+  const selectedImage = gallery[selectedIndex] ?? gallery[0] ?? "";
   const discount = Math.max(
     0,
     Math.round((1 - product.price / Math.max(product.comparePrice, 1)) * 100),
@@ -47,225 +49,231 @@ export default function ProductDetailClient({
   const increase = () => setQuantity((value) => Math.min(value + 1, product.stock));
   const decrease = () => setQuantity((value) => Math.max(value - 1, 1));
 
+  const addToCart = () => {
+    if (!isInitialized || !isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(`/products/${product.product_id}`)}`);
+      return;
+    }
+
+    addItem(product, quantity);
+    openCart();
+    toast.success("Đã thêm vào giỏ hàng", {
+      description: `${quantity} x ${product.name}`,
+    });
+  };
+
+  const handleTouchEnd = (clientX: number) => {
+    if (touchStartX.current === null || gallery.length <= 1) return;
+    const delta = touchStartX.current - clientX;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 40) return;
+
+    setSelectedIndex((current) => {
+      if (delta > 0) return Math.min(current + 1, gallery.length - 1);
+      return Math.max(current - 1, 0);
+    });
+  };
+
   return (
-    <div className="bg-background pb-24">
-      {/* Breadcrumb */}
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 py-6">
-        <nav className="flex items-center gap-2 text-xs font-bold tracking-widest text-muted-foreground uppercase">
-          <Link href="/" className="hover:text-primary transition-colors">
-            Trang chủ
-          </Link>
+    <div className="bg-background pb-28 lg:pb-24">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-tertiary">
+          <Link href="/" className="transition-colors hover:text-accent">Trang chủ</Link>
           <ChevronRight className="size-3" />
-          <Link
-            href={`/products?category=${product.category?.slug ?? ""}`}
-            className="hover:text-primary transition-colors"
-          >
+          <Link href={`/products?category=${product.category?.slug ?? ""}`} className="transition-colors hover:text-accent">
             {product.category?.name}
           </Link>
           <ChevronRight className="size-3" />
-          <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
+          <span className="max-w-[200px] truncate text-primary">{product.name}</span>
         </nav>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 items-start">
-          
-          {/* Image Gallery Column (Sticky) */}
-          <div className="lg:col-span-7 lg:sticky lg:top-24 flex flex-col gap-4">
-            <GlassCard className="!rounded-[2rem]">
-              <div className="relative w-full aspect-[4/5] md:aspect-square group">
-              <Image
-                src={selectedImage}
-                alt={product.name}
-                width={1200}
-                height={1200}
-                priority
-                className="aspect-[4/5] md:aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute top-6 left-6 flex flex-col gap-2">
-                {tags.map((tag) => (
-                  <Badge key={tag} className="bg-white/80 text-primary backdrop-blur-md border-white/50 uppercase tracking-widest text-[10px] font-bold shadow-sm">
-                    {tag}
-                  </Badge>
-                ))}
-                {discount > 0 && (
-                  <Badge className="bg-secondary/90 text-white backdrop-blur-md border-secondary/50 uppercase tracking-widest text-[10px] font-bold shadow-sm w-fit">
-                    -{discount}%
-                  </Badge>
-                )}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-16">
+          <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:col-span-7">
+            <Card className="p-0">
+              <div
+                className="relative aspect-[4/5] w-full touch-pan-y overflow-hidden rounded-lg bg-surface-muted md:aspect-square"
+                onTouchStart={(event) => {
+                  touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+                }}
+                onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
+              >
+                <Image
+                  src={selectedImage}
+                  alt={product.name}
+                  width={1200}
+                  height={1200}
+                  priority
+                  sizes="(min-width: 1024px) 58vw, 100vw"
+                  className="size-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+                />
+                <div className="absolute left-4 top-4 flex flex-col gap-2">
+                  {tags.map((tag) => (
+                    <Badge key={tag} className="bg-surface/90 text-accent backdrop-blur">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {discount > 0 && (
+                    <Badge className="w-fit bg-warning text-warning-text">
+                      -{discount}%
+                    </Badge>
+                  )}
+                </div>
               </div>
-              </div>
-            </GlassCard>
-            
-            {/* Thumbnails */}
+            </Card>
+
             {gallery.length > 1 && (
-              <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+              <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
                 {gallery.map((img, idx) => (
                   <button
-                    key={idx}
-                    onClick={() => setSelectedImage(img)}
-                    className={`relative size-24 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${selectedImage === img ? "border-primary shadow-md scale-100" : "border-transparent opacity-60 hover:opacity-100 scale-95"}`}
+                    key={img}
+                    onClick={() => setSelectedIndex(idx)}
+                    className={`relative size-20 shrink-0 overflow-hidden rounded-lg border-2 transition-all sm:size-24 ${
+                      selectedIndex === idx ? "border-accent shadow-md" : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                    aria-label={`Xem ảnh ${idx + 1}`}
                   >
-                    <Image src={img} alt={`Thumbnail ${idx}`} fill className="object-cover" />
+                    <Image src={img} alt={`Ảnh sản phẩm ${idx + 1}`} fill sizes="96px" className="object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Product Info Column */}
-          <div className="lg:col-span-5 flex flex-col pt-4 lg:pt-10">
-            <Link
-              href={`/products?category=${product.category?.slug ?? ""}`}
-              className="text-xs font-bold tracking-widest text-secondary uppercase mb-4 inline-block"
-            >
+          <div className="flex flex-col pt-2 lg:col-span-5 lg:pt-8">
+            <Link href={`/products?category=${product.category?.slug ?? ""}`} className="mb-3 inline-block text-xs font-bold uppercase tracking-[0.14em] text-accent">
               {product.category?.name}
             </Link>
-            
-            <h1 className="text-[32px] md:text-[40px] font-sans font-bold text-foreground leading-[1.15] mb-4 drop-shadow-sm tracking-tight">
+
+            <h1 className="mb-4 text-[32px] font-bold leading-tight text-primary md:text-[40px]">
               {product.name}
             </h1>
-            
-            <div className="flex items-center gap-3 text-sm mb-8">
-              <div className="flex text-yellow-500">
+
+            <div className="mb-7 flex flex-wrap items-center gap-3 text-sm">
+              <div className="flex text-warning">
                 <Star className="size-4 fill-current" />
               </div>
-              <span className="font-medium text-foreground">
-                {product.avgRating ?? "5.0"} <span className="text-muted-foreground font-normal">({product.reviewCount ?? 0} đánh giá)</span>
+              <span className="font-medium text-primary">
+                {product.avgRating ?? "5.0"} <span className="font-normal text-secondary">({product.reviewCount ?? 0} đánh giá)</span>
               </span>
-              <span className="h-4 w-px bg-border/50"></span>
-              <span className={`font-bold uppercase tracking-wider text-[10px] ${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
+              <span className="h-4 w-px bg-border" />
+              <span className={`text-xs font-bold uppercase tracking-[0.12em] ${product.stock > 0 ? "text-success" : "text-error"}`}>
                 {product.stock > 0 ? "Còn hàng" : "Hết hàng"}
               </span>
             </div>
-            
-            <div className="flex items-end gap-4 mb-10">
-              <span className="text-[32px] font-sans font-bold text-primary tracking-tight drop-shadow-sm">{formatPrice(product.price)}</span>
+
+            <div className="mb-8 flex items-end gap-4">
+              <span className="text-[32px] font-bold tracking-tight text-accent">{formatPrice(product.price)}</span>
               {product.comparePrice > product.price && (
-                <span className="text-[18px] text-muted-foreground line-through mb-1.5">{formatPrice(product.comparePrice)}</span>
+                <span className="mb-1.5 text-[18px] text-tertiary line-through">{formatPrice(product.comparePrice)}</span>
               )}
             </div>
 
-            <div className="text-[15px] md:text-[16px] text-muted-foreground leading-[1.7] mb-10 font-medium">
-              <p className="whitespace-pre-line line-clamp-6">{product.description}</p>
-            </div>
+            <p className="mb-8 line-clamp-6 whitespace-pre-line text-base leading-7 text-secondary">
+              {product.description}
+            </p>
 
-            {/* Gift Promotion Box */}
             {product.promoted_gift && (
-              <div className="mb-10 rounded-2xl bg-white/20 backdrop-blur-lg p-5 border border-white/40 relative overflow-hidden group shadow-[0_10px_30px_rgba(31,41,51,0.05)]">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                 <div className="flex items-center gap-3 mb-4">
-                   <div className="flex items-center justify-center size-8 rounded-full bg-secondary/80 text-white backdrop-blur-sm shadow-sm border border-secondary/50">
-                     <Package className="size-4" />
-                   </div>
-                   <div>
-                     <span className="text-sm font-bold text-foreground uppercase tracking-wider block">Ưu đãi tặng kèm</span>
-                     <span className="text-xs text-muted-foreground">Mua sản phẩm này được tặng phần quà sau</span>
-                   </div>
-                 </div>
-                 <div className="flex items-center gap-4 bg-white/40 rounded-xl p-3 border border-white/50 backdrop-blur-md shadow-inner">
-                   <div className="size-16 rounded-lg overflow-hidden shrink-0 shadow-sm relative">
-                     <Image
+              <Card variant="flat" className="mb-8 bg-accent-light p-4">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center rounded-full bg-accent text-white">
+                    <Package className="size-4" />
+                  </div>
+                  <div>
+                    <span className="block text-sm font-bold uppercase tracking-[0.1em] text-primary">Ưu đãi tặng kèm</span>
+                    <span className="text-xs text-secondary">Mua sản phẩm này được tặng phần quà sau</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 rounded-lg border border-[--color-border] bg-surface p-3">
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-md">
+                    <Image
                       src={product.promoted_gift.images?.[0] ?? product.promoted_gift.image ?? "/placeholder.png"}
-                      alt={product.promoted_gift.name}
+                      alt={product.promoted_gift.name ?? "Quà tặng"}
                       fill
+                      sizes="64px"
                       className="object-cover"
-                     />
-                   </div>
-                   <div>
-                      <p className="text-sm font-bold text-foreground line-clamp-1">{product.promoted_gift.name}</p>
-                      <p className="text-xs text-secondary font-bold tracking-wider uppercase mt-1">Miễn phí</p>
-                   </div>
-                 </div>
-              </div>
+                    />
+                  </div>
+                  <div>
+                    <p className="line-clamp-1 text-sm font-bold text-primary">{product.promoted_gift.name}</p>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-accent">Miễn phí</p>
+                  </div>
+                </div>
+              </Card>
             )}
 
-            {/* Add to Cart Actions */}
-            <div className="flex flex-col gap-4 mb-12">
+            <div className="mb-10 hidden flex-col gap-4 lg:flex">
               <div className="flex items-center gap-4">
-                <div className="flex items-center rounded-full border border-white/40 bg-white/30 backdrop-blur-sm shadow-sm p-1">
-                  <button onClick={decrease} disabled={quantity <= 1} className="size-10 flex items-center justify-center rounded-full hover:bg-white/50 text-foreground transition-colors disabled:opacity-50 font-medium active:scale-95">
-                    -
-                  </button>
-                  <span className="w-12 text-center font-bold text-foreground">{quantity}</span>
-                  <button onClick={increase} disabled={quantity >= product.stock} className="size-10 flex items-center justify-center rounded-full hover:bg-white/50 text-foreground transition-colors disabled:opacity-50 font-medium active:scale-95">
-                    +
-                  </button>
+                <div className="flex items-center rounded-full border border-[--color-border] bg-surface p-1 shadow-sm">
+                  <button onClick={decrease} disabled={quantity <= 1} className="flex size-10 items-center justify-center rounded-full text-primary transition hover:bg-surface-muted disabled:opacity-40">-</button>
+                  <span className="w-12 text-center font-bold text-primary">{quantity}</span>
+                  <button onClick={increase} disabled={quantity >= product.stock} className="flex size-10 items-center justify-center rounded-full text-primary transition hover:bg-surface-muted disabled:opacity-40">+</button>
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {product.unit ? `Đơn vị: ${product.unit}` : (product.weightGram ? `Khối lượng: ${product.weightGram}g` : "")}
+                <p className="text-xs font-medium text-secondary">
+                  {product.unit ? `Đơn vị: ${product.unit}` : product.weightGram ? `Khối lượng: ${product.weightGram}g` : ""}
                 </p>
               </div>
 
-              <GlassButton
-                variant="primary"
-                className="w-full"
-                disabled={product.stock <= 0}
-                onClick={() => {
-                  if (!isInitialized || !isLoggedIn) {
-                    router.push(`/login?redirect=${encodeURIComponent(`/products/${product.product_id}`)}`);
-                    return;
-                  }
-
-                  addItem(product, quantity);
-                  openCart();
-                  toast.success("Đã thêm vào giỏ hàng", {
-                    description: `${quantity} x ${product.name}`,
-                  });
-                }}
-              >
-                <ShoppingCart className="mr-2 size-5" />
+              <Button size="lg" className="w-full" disabled={product.stock <= 0} onClick={addToCart}>
+                <ShoppingCart className="size-5" />
                 Thêm vào giỏ hàng
-              </GlassButton>
+              </Button>
             </div>
 
-            {/* Guarantees */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-8">
+            <div className="grid gap-4 border-t border-[--color-border] pt-8 sm:grid-cols-2">
               <div className="flex items-start gap-3">
-                <div className="mt-1 size-8 rounded-full bg-muted flex items-center justify-center shrink-0 text-primary">
+                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-light text-accent">
                   <Truck className="size-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground">Giao hàng toàn quốc</h4>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Nhận hàng trong 2-4 ngày làm việc.</p>
+                  <h4 className="text-sm font-bold text-primary">Giao hàng toàn quốc</h4>
+                  <p className="mt-1 text-xs leading-relaxed text-secondary">Nhận hàng trong 2-4 ngày làm việc.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="mt-1 size-8 rounded-full bg-muted flex items-center justify-center shrink-0 text-primary">
+                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-light text-accent">
                   <RotateCcw className="size-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground">Đổi trả dễ dàng</h4>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">7 ngày hoàn tiền nếu sản phẩm lỗi.</p>
+                  <h4 className="text-sm font-bold text-primary">Đổi trả dễ dàng</h4>
+                  <p className="mt-1 text-xs leading-relaxed text-secondary">7 ngày hoàn tiền nếu sản phẩm lỗi.</p>
                 </div>
               </div>
             </div>
 
-            {/* Full Description Accordion (Simulated) */}
-            <div className="mt-12 border-t border-border pt-10">
-              <h3 className="text-xl font-serif font-bold text-foreground mb-6">Chi tiết sản phẩm</h3>
-              <div className="prose prose-sm max-w-none text-muted-foreground leading-loose">
-                <p className="whitespace-pre-line">{product.description}</p>
-              </div>
+            <div className="mt-10 border-t border-[--color-border] pt-8">
+              <h3 className="mb-4 text-xl font-bold text-primary">Chi tiết sản phẩm</h3>
+              <p className="whitespace-pre-line text-sm leading-7 text-secondary">{product.description}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Related Products */}
       {relatedProducts && relatedProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-6 lg:px-8 mt-32">
-          <div className="mb-10 flex flex-col items-center text-center">
-            <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase mb-2">Gợi ý thêm</p>
-            <h2 className="text-3xl font-serif font-bold text-foreground">Có thể bạn sẽ thích</h2>
+        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 text-center">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent">Gợi ý thêm</p>
+            <h2 className="text-3xl font-bold text-primary">Có thể bạn sẽ thích</h2>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 lg:gap-x-8">
+          <div className="flex snap-x gap-4 overflow-x-auto pb-3 md:grid md:grid-cols-4 md:overflow-visible">
             {relatedProducts.map((item) => (
               <ProductCard key={item.product_id} product={item} />
             ))}
           </div>
         </section>
       )}
+
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-[--color-border] bg-surface/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg backdrop-blur-sm lg:hidden">
+        <div className="flex min-w-0 flex-col justify-center">
+          <span className="text-xs text-secondary">Tổng</span>
+          <span className="text-xl font-bold text-accent">{formatPrice(product.price * quantity)}</span>
+        </div>
+        <Button className="flex-1" disabled={product.stock <= 0} onClick={addToCart}>
+          <ShoppingCart className="size-4" />
+          Thêm vào giỏ
+        </Button>
+      </div>
     </div>
   );
 }

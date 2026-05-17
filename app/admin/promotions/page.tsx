@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Tag, Plus, Search, Pencil, Trash2, ChevronRight, Loader2 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -8,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Promotion } from "@/types";
-import PromotionSheet from "@/components/admin/PromotionSheet";
 import { authFetch } from "@/lib/auth-fetch";
 
 const formatPrice = (value: number) => `${(value ?? 0).toLocaleString("vi-VN")}đ`;
+const PromotionSheet = dynamic(() => import("@/components/admin/PromotionSheet"), {
+  ssr: false,
+});
 
 export default function PromotionsPage() {
   const router = useRouter();
@@ -133,11 +137,13 @@ export default function PromotionsPage() {
                 onClick={() => router.push(`/admin/promotions/${promo.promotion_id}`)}
               >
                 {/* Banner Image */}
-                <div className="aspect-[21/9] w-full overflow-hidden bg-muted">
-                  <img
+                <div className="relative aspect-[21/9] w-full overflow-hidden bg-muted">
+                  <Image
                     src={promo.image || "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2070&auto=format&fit=crop"}
                     alt={promo.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
 

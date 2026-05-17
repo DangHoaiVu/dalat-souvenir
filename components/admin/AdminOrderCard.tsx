@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { 
   ChevronDown, 
@@ -124,9 +125,9 @@ export default function AdminOrderCard({
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center justify-between rounded-2xl bg-white/5 p-3 border border-white/5 hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="size-10 shrink-0 rounded-xl overflow-hidden bg-zinc-800 border border-white/5">
+                  <div className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-zinc-800 border border-white/5">
                     {item.product.image ? (
-                        <img src={item.product.image} alt={item.product.name} className="size-full object-cover" />
+                        <Image src={item.product.image} alt={item.product.name} fill sizes="40px" className="object-cover" />
                     ) : (
                         <div className="size-full flex items-center justify-center text-zinc-700"><Package className="size-5" /></div>
                     )}

@@ -4,7 +4,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { motion, HTMLMotionProps } from "framer-motion";
 
-interface GlassButtonProps extends HTMLMotionProps<"button"> {
+interface GlassButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+  children?: React.ReactNode;
   variant?: "primary" | "secondary" | "pill" | "icon";
 }
 

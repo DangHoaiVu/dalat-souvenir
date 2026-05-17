@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MapPin, Save, X, Navigation } from "lucide-react";
+import { Save, X, Navigation } from "lucide-react";
 
 // Fix for default marker icons in Leaflet with Next.js
 const DefaultIcon = L.icon({

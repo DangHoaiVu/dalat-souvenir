@@ -5,6 +5,7 @@ import { getOptionalUser } from '@/lib/server-auth';
 // Supabase configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -37,6 +38,20 @@ function normalizePaymentMethod(value?: string) {
   return value === "vnpay" ? "vnpay" : "cod";
 }
 
+function createUserClient(token: string) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -47,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No items to purchase' }, { status: 400 });
     }
 
-    const { user } = await getOptionalUser(req);
+    const { user, token } = await getOptionalUser(req);
     const userId = user?.id ?? null;
 
     const quantities = new Map<string, number>();
@@ -99,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     const couponCode = String(body.couponCode ?? "").trim().toUpperCase();
     const discount = couponCode === "DALATSPECIAL" ? Math.round(subtotal * 0.1) : 0;
-    const shippingFee = couponCode === "FREESHIP" || subtotal >= 500000 ? 0 : 30000;
+    const shippingFee = 0;
     const total = Math.max(0, subtotal + shippingFee - discount);
     const nowIso = new Date().toISOString();
     const customerAddress = normalizeAddress(customerInfo, body.address);
@@ -115,8 +130,11 @@ export async function POST(req: NextRequest) {
       payment_method: normalizePaymentMethod(customerInfo?.paymentMethod),
     };
 
-    if (userId && customerInfo) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
+    let canAttachUserToOrder = Boolean(userId);
+
+    if (userId && token && customerInfo) {
+      const userSupabase = createUserClient(token);
+      const { error: profileError } = await userSupabase.from('profiles').upsert({
         user_id: userId,
         full_name: customerInfo.name,
         phone_number: customerInfo.phone,
@@ -124,23 +142,37 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id' });
       
       if (profileError) {
-        console.warn("Could not upsert profile, keeping order attached to user:", profileError);
+        canAttachUserToOrder = false;
+        console.warn("Could not upsert profile; creating checkout order without user_id:", profileError);
       }
     }
     
-    if (userId) {
+    if (userId && canAttachUserToOrder) {
       orderPayload.user_id = userId;
     }
     
-    const { data: orderRow, error: orderError } = await supabase
+    let { data: orderRow, error: orderError } = await supabase
       .from('orders')
       .insert(orderPayload)
       .select('order_id')
       .single();
 
-    if (orderError) {
+    if (orderError?.code === "23503" && orderPayload.user_id) {
+      const fallbackOrderPayload = { ...orderPayload };
+      delete fallbackOrderPayload.user_id;
+      console.warn("Order user_id foreign key failed; retrying checkout as guest order:", orderError);
+      const retry = await supabase
+        .from('orders')
+        .insert(fallbackOrderPayload)
+        .select('order_id')
+        .single();
+      orderRow = retry.data;
+      orderError = retry.error;
+    }
+
+    if (orderError || !orderRow) {
       console.error('DATABASE - Order creation failed:', orderError);
-      return NextResponse.json({ error: 'Order creation failed', details: orderError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Order creation failed', details: orderError?.message || "Order row was not returned" }, { status: 500 });
     }
 
     const orderId = orderRow.order_id;
@@ -152,6 +184,7 @@ export async function POST(req: NextRequest) {
 
     if (itemsInsertError) {
       console.error('DATABASE - Order items insert failed:', itemsInsertError);
+      await supabase.from('orders').delete().eq('order_id', orderId);
       return NextResponse.json({ error: 'Order items insert failed', details: itemsInsertError.message }, { status: 500 });
     }
 

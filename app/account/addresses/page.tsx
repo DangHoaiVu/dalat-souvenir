@@ -53,13 +53,13 @@ export default function Page() {
     isDefault: false,
   });
 
-  const setDefault = (id: number) => {
+  const setDefault = (id: Address["id"]) => {
     setAddresses((prev) =>
       prev.map((address) => ({ ...address, isDefault: address.id === id })),
     );
   };
 
-  const removeAddress = (id: number) => {
+  const removeAddress = (id: Address["id"]) => {
     if (!window.confirm("Bạn có chắc muốn xóa địa chỉ này?")) return;
     setAddresses((prev) => prev.filter((address) => address.id !== id));
     toast.success("Đã xóa địa chỉ");

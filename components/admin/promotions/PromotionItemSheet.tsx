@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { 
   Loader2, 
@@ -27,16 +28,25 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Product, Promotion } from "@/types";
 import ProductSelectionDialog from "./ProductSelectionDialog";
+
+type EditablePromotionItem = {
+  promotion_id?: string;
+  promotion_item_id?: string;
+  product_id: string;
+  discount_percentage?: number;
+  gift_product_id?: string;
+  product: Product;
+  gift_product?: Product | null;
+};
 
 interface PromotionItemSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   promotion: Promotion;
-  item?: any | null; // For editing
+  item?: EditablePromotionItem | null;
   onSave: () => void;
 }
 
@@ -115,7 +125,7 @@ export default function PromotionItemSheet({
         const error = await res.json();
         toast.error(error.error || "Lỗi khi lưu sản phẩm");
       }
-    } catch (e) {
+    } catch {
       toast.error("Lỗi kết nối server");
     } finally {
       setIsSaving(false);
@@ -175,8 +185,8 @@ export default function PromotionItemSheet({
                 <div className="space-y-2">
                   {selectedProducts.map(product => (
                     <div key={product.product_id} className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/50 border border-border animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="size-16 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
-                        <img src={product.image} alt={product.name} className="size-full object-cover" />
+                      <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted border border-border">
+                        <Image src={product.image || "/placeholder.png"} alt={product.name} fill sizes="64px" className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-sm text-foreground truncate">{product.name}</h4>
@@ -377,7 +387,7 @@ export default function PromotionItemSheet({
         multiSelect={!item}
         onlyForSale={true}
         title="Chọn sản phẩm áp dụng"
-        excludeIds={promotion.items ? (promotion.items as any[]).map(i => i.product_id) : []}
+        excludeIds={promotion.items?.map((i) => i.product_id) ?? []}
         onSelect={(p) => {
           setSelectedProducts([p]);
           setShowProductPicker(false);
@@ -404,6 +414,3 @@ export default function PromotionItemSheet({
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}

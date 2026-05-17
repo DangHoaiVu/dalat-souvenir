@@ -3,12 +3,9 @@
 
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
 
 import { ORDERS } from "@/lib/mock-data";
 import type { Order } from "@/types";
-
-type OrderTab = "all" | "pending" | "shipping" | "delivered" | "cancelled";
 
 const statusLabel: Record<Order["status"], string> = {
   pending: "Chờ xử lý",

@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Heart, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
-import type { Product } from "@/types";
-import { useCartStore } from "@/stores/cartStore";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
+import type { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
@@ -18,18 +20,18 @@ interface ProductCardProps {
 }
 
 const text = {
-  add: "Th\u00eam",
-  added: "\u0110\u00e3 th\u00eam v\u00e0o gi\u1ecf",
-  bestseller: "B\u00e1n ch\u1ea1y",
-  curated: "Tuy\u1ec3n ch\u1ecdn",
-  detail: "Xem chi ti\u1ebft",
-  fallbackCategory: "\u0110\u1eb7c s\u1ea3n \u0110\u00e0 L\u1ea1t",
-  gift: "Qu\u00e0 t\u1eb7ng",
-  new: "M\u1edbi",
+  add: "Thêm vào giỏ",
+  added: "Đã thêm vào giỏ",
+  bestseller: "Bán chạy",
+  curated: "Tuyển chọn",
+  detail: "Xem chi tiết",
+  fallbackCategory: "Đặc sản Đà Lạt",
+  gift: "Quà tặng",
+  new: "Mới",
 };
 
 const formatPrice = (price: number): string =>
-  `${new Intl.NumberFormat("vi-VN").format(price)}\u0111`;
+  `${new Intl.NumberFormat("vi-VN").format(price)}đ`;
 
 export default function ProductCard({
   product,
@@ -41,99 +43,117 @@ export default function ProductCard({
   const pathname = usePathname();
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const { addItem } = useCartStore();
+  const addItem = useCartStore((state) => state.addItem);
 
   if (product.is_for_sale === false) return null;
 
   const activeGift = gift || product.promoted_gift;
-
   const discount = Math.max(
     0,
     Math.round((1 - product.price / Math.max(product.comparePrice, 1)) * 100),
   );
-
   const imageSrc = Array.isArray(product.images) && product.images[0]
     ? product.images[0]
     : product.image || "/placeholder.png";
-
   const tagText = (product.tags ?? []).join(" ").toLowerCase();
   const badgeLabel = discount > 0
     ? `-${discount}%`
-    : tagText.includes("m\u1edbi") || tagText.includes("new")
+    : tagText.includes("mới") || tagText.includes("new")
       ? text.new
-      : tagText.includes("b\u00e1n ch\u1ea1y") || tagText.includes("best")
+      : tagText.includes("bán chạy") || tagText.includes("best")
         ? text.bestseller
         : text.curated;
 
-  return (
-    <article className="group flex h-full min-w-[260px] snap-start flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] transition duration-200 ease-in-out hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--color-accent)_36%,var(--color-border))] hover:shadow-[var(--shadow-md)]">
-      <Link href={`/products/${product.product_id}`} className="block overflow-hidden" aria-label={`${text.detail} ${product.name}`}>
-        <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-surface-muted)]">
-          <Image
-            src={imageSrc}
-            alt={product.name}
-            width={420}
-            height={525}
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 40vw, 82vw"
-            loading="lazy"
-            className="size-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-[1.04]"
-          />
-          <span className="absolute left-3 top-3 rounded-full bg-[var(--glass-bg)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-accent)] shadow-[var(--shadow-sm)] backdrop-blur-md">
-            {badgeLabel}
-          </span>
-          {activeGift && (
-            <span className="absolute inset-x-3 bottom-3 truncate rounded-full bg-[var(--color-warm)] px-3 py-2 text-[11px] font-semibold text-white shadow-[var(--shadow-sm)]">
-              {text.gift}: {activeGift.name}
-            </span>
-          )}
-        </div>
-      </Link>
+  const addToCart = () => {
+    if (!isInitialized || !isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname || "/products")}`);
+      return;
+    }
 
-      <div className="flex flex-1 flex-col p-5">
+    addItem(product, 1);
+    toast.success(text.added);
+  };
+
+  return (
+    <Card variant="interactive" className="group h-full min-w-[240px] snap-start p-0">
+      <div className="relative overflow-hidden rounded-t-lg bg-surface-muted">
+        <Link href={`/products/${product.product_id}`} aria-label={`${text.detail} ${product.name}`}>
+          <div className="relative aspect-[4/5] overflow-hidden">
+            <Image
+              src={imageSrc}
+              alt={product.name}
+              width={480}
+              height={600}
+              sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 92vw"
+              loading="lazy"
+              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+        </Link>
+
+        <span className="absolute left-3 top-3 rounded-full bg-warning px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-warning-text shadow-sm">
+          {badgeLabel}
+        </span>
+
+        <button
+          type="button"
+          className="absolute right-3 top-3 hidden size-10 items-center justify-center rounded-full border border-[--color-border] bg-surface/90 text-tertiary opacity-0 shadow-sm backdrop-blur transition-opacity duration-200 hover:text-accent group-hover:opacity-100 md:flex"
+          aria-label="Thêm vào yêu thích"
+        >
+          <Heart className="size-4" />
+        </button>
+
+        {activeGift && (
+          <span className="absolute inset-x-3 bottom-3 truncate rounded-md bg-surface/92 px-3 py-2 text-xs font-semibold text-accent-text shadow-sm backdrop-blur">
+            {text.gift}: {activeGift.name}
+          </span>
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 hidden translate-y-full p-3 transition-transform duration-200 group-hover:translate-y-0 md:block">
+          <Button type="button" className="w-full shadow-lg" onClick={addToCart}>
+            <ShoppingCart className="size-4" />
+            {text.add}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
         {showCategory && (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-accent)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent">
             {product.category?.name ?? text.fallbackCategory}
           </p>
         )}
+
         <Link href={`/products/${product.product_id}`} className="mt-2 block">
-          <h3 className="line-clamp-2 text-[17px] font-semibold leading-snug text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-accent)]">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-primary transition-colors group-hover:text-accent">
             {product.name}
           </h3>
         </Link>
 
         {showStory && (
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--color-text-secondary)]">{product.story}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-secondary">{product.story}</p>
         )}
 
-        <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
           <div>
             {product.price < product.comparePrice && (
-              <p className="text-sm text-[var(--color-text-secondary)] line-through">
+              <p className="text-sm text-tertiary line-through">
                 {formatPrice(product.comparePrice)}
               </p>
             )}
-            <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-              {formatPrice(product.price)}
-            </p>
+            <p className="text-lg font-semibold text-accent">{formatPrice(product.price)}</p>
           </div>
-          <button
+          <Button
             type="button"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-hover)]"
-            onClick={() => {
-              if (!isInitialized || !isLoggedIn) {
-                router.push(`/login?redirect=${encodeURIComponent(pathname || "/products")}`);
-                return;
-              }
-
-              addItem(product, 1);
-              toast.success(text.added);
-            }}
+            size="icon"
+            className="md:hidden"
+            onClick={addToCart}
+            aria-label={text.add}
           >
-            <Plus className="size-4" aria-hidden="true" />
-            {text.add}
-          </button>
+            <Plus className="size-4" />
+          </Button>
         </div>
       </div>
-    </article>
+    </Card>
   );
 }

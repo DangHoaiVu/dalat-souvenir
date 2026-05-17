@@ -1,22 +1,21 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { 
   ArrowLeft, 
   Plus, 
-  ChevronRight, 
   Loader2, 
   Pencil, 
   Trash2, 
   Gift, 
-  Percent, 
   CircleDollarSign,
   Info,
   Calendar,
-  X,
   PlusCircle
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -25,8 +24,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Promotion, Product } from "@/types";
-import PromotionItemSheet from "@/components/admin/promotions/PromotionItemSheet";
-import PromotionSheet from "@/components/admin/PromotionSheet";
+
+const PromotionItemSheet = dynamic(() => import("@/components/admin/promotions/PromotionItemSheet"), {
+  ssr: false,
+});
+const PromotionSheet = dynamic(() => import("@/components/admin/PromotionSheet"), {
+  ssr: false,
+});
 
 interface ExtendedPromotion extends Promotion {
   items: Array<{
@@ -39,6 +43,8 @@ interface ExtendedPromotion extends Promotion {
   }>;
 }
 
+type PromotionDetailItem = ExtendedPromotion["items"][number];
+
 export default function PromotionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -48,10 +54,10 @@ export default function PromotionDetailPage() {
   
   // Sheet states
   const [openItemSheet, setOpenItemSheet] = useState(false);
-  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [editingItem, setEditingItem] = useState<PromotionDetailItem | null>(null);
   const [openInfoSheet, setOpenInfoSheet] = useState(false);
 
-  const fetchPromotion = async () => {
+  const fetchPromotion = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/promotions/${id}`);
@@ -63,16 +69,17 @@ export default function PromotionDetailPage() {
         toast.error(`Lỗi: ${errorMsg}`);
         router.push("/admin/promotions");
       }
-    } catch (error: any) {
-      toast.error(`Lỗi kết nối: ${error?.message || "Không xác định"}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Không xác định";
+      toast.error(`Lỗi kết nối: ${message}`);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, router]);
 
   useEffect(() => {
     fetchPromotion();
-  }, [id]);
+  }, [fetchPromotion]);
 
   const handleDeleteItem = async (productId: string) => {
     if (!confirm("Xóa sản phẩm này khỏi chương trình khuyến mãi?")) return;
@@ -87,7 +94,7 @@ export default function PromotionDetailPage() {
       } else {
         toast.error("Không thể xóa sản phẩm");
       }
-    } catch (e) {
+    } catch {
       toast.error("Lỗi khi xóa sản phẩm");
     }
   };
@@ -147,11 +154,13 @@ export default function PromotionDetailPage() {
         <div className="pt-6 px-8 pb-10">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Full Uncropped Banner Image */}
-            <div className="w-full md:w-[480px] shrink-0 rounded-[2rem] overflow-hidden bg-muted border border-border shadow-2xl shadow-black/20">
-              <img 
-                src={promotion.image || "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2070&auto=format&fit=crop"} 
+            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-[2rem] border border-border bg-muted shadow-2xl shadow-black/20 md:w-[480px]">
+              <Image
+                src={promotion.image || "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2070&auto=format&fit=crop"}
                 alt={promotion.name}
-                className="w-full h-auto block hover:scale-105 transition-transform duration-700"
+                fill
+                sizes="(min-width: 768px) 480px, 100vw"
+                className="object-cover transition-transform duration-700 hover:scale-105"
               />
             </div>
 
@@ -263,7 +272,17 @@ export default function PromotionDetailPage() {
   );
 }
 
-function PromotionItemCard({ item, promotion, onEdit, onDelete }: { item: any; promotion: Promotion; onEdit: () => void; onDelete: () => void }) {
+function PromotionItemCard({
+  item,
+  promotion,
+  onEdit,
+  onDelete,
+}: {
+  item: PromotionDetailItem;
+  promotion: Promotion;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const product = item.product;
   const hasFixedPrice = promotion.fixed_price != null && !item.discount_percentage;
   
@@ -282,8 +301,14 @@ function PromotionItemCard({ item, promotion, onEdit, onDelete }: { item: any; p
   return (
     <Card className="group relative overflow-hidden border-border bg-card p-5 transition-all hover:bg-secondary/40 hover:border-primary/20 shadow-xl rounded-[2rem]">
        <div className="flex gap-5">
-          <div className="size-28 rounded-3xl overflow-hidden bg-muted shrink-0 border border-border shadow-inner">
-             <img src={product.image} alt={product.name} className="size-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          <div className="relative size-28 shrink-0 overflow-hidden rounded-3xl border border-border bg-muted shadow-inner">
+             <Image
+               src={product.image || product.images?.[0] || "/placeholder.png"}
+               alt={product.name}
+               fill
+               sizes="112px"
+               className="object-cover transition-transform duration-700 group-hover:scale-110"
+             />
           </div>
           <div className="flex-1 min-w-0 space-y-3 pt-1">
              <div className="flex items-start justify-between gap-2">

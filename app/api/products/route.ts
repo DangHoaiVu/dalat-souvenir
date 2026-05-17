@@ -118,13 +118,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Missing product_id or id" }, { status: 400 });
   }
   const payload = toDbPayload(rest);
-  console.log("[API/PUT] Update payload:", payload, "for product_id:", prodId);
   const { data, error } = await supabase
     .from("products")
     .update(payload)
     .eq("product_id", prodId)
     .select(PRODUCT_SELECT);
-  console.log("[API/PUT] Supabase update result:", data, error);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

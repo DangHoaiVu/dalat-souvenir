@@ -25,9 +25,7 @@ export default function AdminLayout({
   return (
     <AdminGuard>
       <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-        <aside className="sticky top-0 hidden h-screen w-[256px] border-r border-[var(--color-border)] md:block">
-          <AdminSidebar />
-        </aside>
+        <AdminSidebar />
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-40 flex h-16 items-center border-b border-[var(--color-border)] bg-[var(--glass-bg)] px-5 shadow-[var(--shadow-sm)] backdrop-blur-xl">
             <div>
@@ -35,7 +33,7 @@ export default function AdminLayout({
               <h1 className="text-base font-semibold tracking-normal">Quản trị cửa hàng</h1>
             </div>
           </header>
-          <main className="p-4 sm:p-6">{children}</main>
+          <main className="p-4 pb-24 sm:p-6 lg:pb-6">{children}</main>
         </div>
       </div>
     </AdminGuard>

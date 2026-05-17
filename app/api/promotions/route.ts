@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag, unstable_cache } from 'next/cache';
 import { createAdminSupabaseClient } from '@/lib/supabaseClient';
 import { requireAdmin } from '@/lib/server-auth';
 import type { NextRequest } from 'next/server';
@@ -94,21 +95,33 @@ async function updatePromotion(promoId: string, payload: Record<string, unknown>
   return { data: null, error: { message: "Unable to update promotion" } };
 }
 
-export async function GET() {
-  try {
+const getPromotionsCached = unstable_cache(
+  async () => {
     const { data, error } = await supabase
       .from('promotions')
       .select('*')
       .order('start_date', { ascending: true });
 
     if (error) {
-      console.error('[API/Promotions] Fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      throw new Error(error.message);
     }
 
     const normalized = (data || []).map((row) => normalizePromotion(row as Record<string, unknown>));
     normalized.sort((a, b) => Number(b.is_active) - Number(a.is_active) || new Date(String(a.start_date ?? "")).getTime() - new Date(String(b.start_date ?? "")).getTime());
-    return NextResponse.json(normalized);
+    return normalized;
+  },
+  ["api-promotions"],
+  { revalidate: 120, tags: ["promotions"] },
+);
+
+export async function GET() {
+  try {
+    const data = await getPromotionsCached();
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+      },
+    });
   } catch (error: unknown) {
     console.error('[API/Promotions] Unexpected error:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 });
@@ -135,6 +148,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidateTag("promotions");
+    revalidateTag("products");
     return NextResponse.json(normalizePromotion((data ?? {}) as Record<string, unknown>));
   } catch (error: unknown) {
     console.error('[API/Promotions] Unexpected error:', error);
@@ -170,6 +185,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "No promotion updated or multiple rows returned" }, { status: 404 });
     }
 
+    revalidateTag("promotions");
+    revalidateTag("products");
     return NextResponse.json(normalizePromotion(data[0] as Record<string, unknown>));
   } catch (error: unknown) {
     console.error('[API/Promotions] Unexpected error:', error);
@@ -201,6 +218,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidateTag("promotions");
+    revalidateTag("products");
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error('[API/Promotions] Unexpected error:', error);

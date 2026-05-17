@@ -58,7 +58,7 @@ export default function ProfilePage() {
   const [editValue, setEditValue] = useState("");
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const getAuthHeaders = async () => {
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -90,9 +90,9 @@ export default function ProfilePage() {
         const data = result.profile;
         if (!didCancel) {
           setProfile({
-            user_id: user.id,
-            full_name: data?.full_name ?? user.name ?? '',
-            phone_number: data?.phone_number ?? user.phone ?? '',
+            user_id: String(user.id),
+            full_name: String(data?.full_name ?? user.name ?? ''),
+            phone_number: String(data?.phone_number ?? user.phone ?? ''),
             address: data?.address ?? '',
             latitude: data?.latitude ?? undefined,
             longitude: data?.longitude ?? undefined,
@@ -101,9 +101,9 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("[ProfileService] catch error:", err);
         if (!didCancel) setProfile({
-          user_id: user.id,
-          full_name: user.name ?? '',
-          phone_number: user.phone ?? ''
+          user_id: String(user.id),
+          full_name: String(user.name ?? ''),
+          phone_number: String(user.phone ?? '')
         });
       } finally {
         if (!didCancel) setLoading(false);
@@ -114,7 +114,7 @@ export default function ProfilePage() {
     return () => { didCancel = true; };
   }, [user]);
 
-  const handleEdit = (field: string, value: string) => {
+  const handleEdit = (field: string, value?: string) => {
     setEditField(field);
     setEditValue(value || "");
   };
@@ -127,7 +127,7 @@ export default function ProfilePage() {
     if (!user) return;
 
     // Always include all address fields if updating address
-    let payload: Record<string, string | number | null> = { user_id: user.id };
+    let payload: Record<string, string | number | null> = { user_id: String(user.id) };
     if (field === "address") {
       payload = {
         user_id: user.id,
@@ -138,9 +138,9 @@ export default function ProfilePage() {
     } else {
       payload[field] = value !== undefined ? value : null;
       if (additional) {
-        for (const key in additional) {
-          if (additional[key] !== undefined) {
-            payload[key] = additional[key];
+        for (const [key, additionalValue] of Object.entries(additional)) {
+          if (additionalValue !== undefined) {
+            payload[key] = additionalValue;
           }
         }
       }
@@ -166,9 +166,9 @@ export default function ProfilePage() {
 
       const updated = result.profile;
       setProfile({
-        user_id: user.id,
-        full_name: updated?.full_name ?? user.name ?? '',
-        phone_number: updated?.phone_number ?? user.phone ?? '',
+        user_id: String(user.id),
+        full_name: String(updated?.full_name ?? user.name ?? ''),
+        phone_number: String(updated?.phone_number ?? user.phone ?? ''),
         address: updated?.address ?? '',
         latitude: updated?.latitude ?? undefined,
         longitude: updated?.longitude ?? undefined,
@@ -224,7 +224,7 @@ export default function ProfilePage() {
           value={profile?.full_name}
           icon={UserIcon}
           editable
-          onEdit={() => handleEdit("full_name", profile?.full_name)}
+          onEdit={() => handleEdit("full_name", profile?.full_name ?? "")}
         />
         <ProfileCard
           label="Email"
@@ -236,7 +236,7 @@ export default function ProfilePage() {
           value={profile?.phone_number}
           icon={Phone}
           editable
-          onEdit={() => handleEdit("phone_number", profile?.phone_number)}
+          onEdit={() => handleEdit("phone_number", profile?.phone_number ?? "")}
         />
         <ProfileCard
           label="Địa chỉ"
@@ -274,7 +274,7 @@ export default function ProfilePage() {
       {/* Address Edit Modal with Map */}
       {showAddressModal && (
         <AddressEditModal
-          initialAddress={profile?.address}
+          initialAddress={profile?.address ?? ""}
           initialLat={profile?.latitude}
           initialLng={profile?.longitude}
           onSave={(addr, lat, lng) => handleSave("address", addr, { latitude: lat, longitude: lng })}

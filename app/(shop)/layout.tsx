@@ -1,16 +1,7 @@
 import Footer from "@/components/shop/Footer";
 import Header from "@/components/shop/Header";
 import CustomerAreaGuard from "@/components/auth/CustomerAreaGuard";
-import dynamic from "next/dynamic";
-
-const CartDrawer = dynamic(() => import("@/components/shop/CartDrawer"), {
-  ssr: false,
-});
-
-const Toaster = dynamic(
-  () => import("@/components/ui/sonner").then((m) => m.Toaster),
-  { ssr: false },
-);
+import CartDrawerMount from "@/components/shop/CartDrawerMount";
 
 export default function ShopLayout({
   children,
@@ -21,8 +12,7 @@ export default function ShopLayout({
         <Header />
         <main id="main-content">{children}</main>
         <Footer />
-        <CartDrawer />
-        <Toaster richColors />
+        <CartDrawerMount />
       </div>
     </CustomerAreaGuard>
   );

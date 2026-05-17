@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import ProductSheet from "@/components/admin/ProductSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,9 @@ import {
 import type { Product, Category } from "@/types";
 
 const formatPrice = (value: number) => `${(value ?? 0).toLocaleString("vi-VN")}đ`;
+const ProductSheet = dynamic(() => import("@/components/admin/ProductSheet"), {
+  ssr: false,
+});
 
 export default function Page() {
   const [list, setList] = useState<Product[]>([]);
@@ -140,15 +144,14 @@ export default function Page() {
               filtered.map((product) => (
                 <TableRow key={product.product_id || product.id}>
                   <TableCell>
-                    {(product.image || (product.images && product.images[0])) && (
-                      <img
-                        src={product.image || (product.images && product.images[0])}
-                        alt={product.name}
-                        width={40}
-                        height={40}
-                        className="rounded-lg object-cover size-10"
-                      />
-                    )}
+                    <Image
+                      src={product.image || product.images?.[0] || "/placeholder.png"}
+                      alt={product.name}
+                      width={40}
+                      height={40}
+                      sizes="40px"
+                      className="size-10 rounded-lg object-cover"
+                    />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>

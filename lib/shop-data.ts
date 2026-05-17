@@ -192,7 +192,7 @@ export async function fetchActivePromotion(): Promise<ActivePromotion | null> {
   return activePromo || null; 
 }
 
-export async function fetchPromotionDetails(id: string): Promise<Record<string, unknown> | null> {
+export async function fetchPromotionDetails(id: string): Promise<PromotionDetails | null> {
   // Ensure we always fetch fresh data from Supabase for promotion details
   noStore();
   const adminSupabase = createAdminSupabaseClient();
@@ -212,7 +212,7 @@ export async function fetchPromotionDetails(id: string): Promise<Record<string, 
     .select('*')
     .eq('promotion_id', id);
 
-  if (itemsError) return { ...promotion, items: [] };
+  if (itemsError) return { ...(promotion as ActivePromotion), items: [] };
 
   // 3. Enrich items with product data
   let enrichedItems: PromotionDetailItem[] = [];

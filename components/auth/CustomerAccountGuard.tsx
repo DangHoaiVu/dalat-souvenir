@@ -13,7 +13,6 @@ export default function CustomerAccountGuard({
   const router = useRouter();
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const user = useAuthStore((state) => state.user);
   const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
@@ -26,13 +25,8 @@ export default function CustomerAccountGuard({
       return;
     }
 
-    if (user?.role === "admin" || user?.role === "seller") {
-      router.replace("/admin/profile");
-      return;
-    }
-
     setIsAllowed(true);
-  }, [isInitialized, isLoggedIn, user?.role, router]);
+  }, [isInitialized, isLoggedIn, router]);
 
   if (!isAllowed) {
     return (

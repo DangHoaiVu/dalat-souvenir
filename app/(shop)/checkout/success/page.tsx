@@ -1,18 +1,40 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo } from "react";
 import { CheckCircle2 } from "lucide-react";
 
 import ProductCard from "@/components/shop/ProductCard";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { PRODUCTS } from "@/lib/mock-data";
 import { useCartStore } from "@/stores/cartStore";
 
 export default function Page() {
+  return (
+    <Suspense fallback={<SuccessFallback />}>
+      <SuccessContent />
+    </Suspense>
+  );
+}
+
+function SuccessFallback() {
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="mx-auto max-w-xl items-center p-8 text-center">
+        <div className="mb-4 size-20 rounded-full bg-success-light" />
+        <div className="h-8 w-72 max-w-full rounded-md bg-surface-muted" />
+        <div className="mt-3 h-4 w-80 max-w-full rounded-md bg-surface-muted" />
+      </Card>
+    </div>
+  );
+}
+
+function SuccessContent() {
   const searchParams = useSearchParams();
   const clearCart = useCartStore((state) => state.clearCart);
-  const orderCode = searchParams.get("code") ?? "SLN000000";
+  const orderCode = searchParams.get("code") ?? searchParams.get("orderId") ?? "SLN000000";
 
   useEffect(() => {
     clearCart();
@@ -21,45 +43,39 @@ export default function Page() {
   const suggested = useMemo(() => PRODUCTS.slice(0, 3), []);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <div className="mx-auto max-w-xl text-center">
-        <div className="mx-auto mb-4 grid size-24 place-items-center rounded-full bg-light">
-          <CheckCircle2 className="size-14 text-primary" />
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="mx-auto max-w-xl items-center p-8 text-center">
+        <div className="mb-4 grid size-20 place-items-center rounded-full bg-success-light text-success">
+          <CheckCircle2 className="size-12" />
         </div>
-        <h1 className="text-3xl font-bold">Đặt hàng thành công! 🎉</h1>
-        <p className="mt-2 text-muted-foreground">
-          Cảm ơn bạn đã tin tưởng Shop Lưu Niệm Đà Lạt
+        <h1 className="text-3xl font-bold text-primary">Đặt hàng thành công</h1>
+        <p className="mt-2 text-secondary">
+          Cảm ơn bạn đã tin tưởng Shop Lưu Niệm Đà Lạt.
         </p>
 
-        <div className="mt-5 rounded-xl border p-4 text-left">
-          <p className="text-sm text-muted-foreground">Mã đơn hàng</p>
-          <p className="text-lg font-semibold">{orderCode}</p>
-          <p className="mt-2 text-sm">Dự kiến giao: 2-4 ngày làm việc</p>
-          <p className="text-sm">Chúng tôi sẽ liên hệ xác nhận trong vòng 30 phút</p>
+        <div className="mt-6 w-full rounded-lg border border-[--color-border] bg-surface-muted p-4 text-left">
+          <p className="text-sm text-secondary">Mã đơn hàng</p>
+          <p className="text-lg font-semibold text-primary">{orderCode}</p>
+          <p className="mt-2 text-sm text-secondary">Dự kiến giao: 2-4 ngày làm việc</p>
+          <p className="text-sm text-secondary">Chúng tôi sẽ liên hệ xác nhận trong vòng 30 phút.</p>
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          📧 Email xác nhận đã được gửi đến địa chỉ của bạn
+        <p className="mt-3 text-sm text-tertiary">
+          Email xác nhận đã được gửi đến địa chỉ của bạn nếu có cung cấp email.
         </p>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Link
-            href="/account/orders"
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-primary text-sm font-medium text-primary hover:bg-primary hover:text-white"
-          >
-            Xem đơn hàng
+        <div className="mt-6 grid w-full gap-2 sm:grid-cols-2">
+          <Link href="/account/orders">
+            <Button variant="outline" className="w-full">Xem đơn hàng</Button>
           </Link>
-          <Link
-            href="/products"
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary text-sm font-medium text-white hover:bg-primary-dark"
-          >
-            Tiếp tục mua sắm
+          <Link href="/products">
+            <Button className="w-full">Tiếp tục mua sắm</Button>
           </Link>
         </div>
-      </div>
+      </Card>
 
-      <section className="mt-10">
-        <h2 className="mb-4 text-xl font-semibold">Bạn có thể thích</h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <section className="mt-12">
+        <h2 className="mb-5 text-xl font-semibold text-primary">Bạn có thể thích</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {suggested.map((product) => (
             <ProductCard key={product.product_id} product={product} />
           ))}

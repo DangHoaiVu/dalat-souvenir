@@ -13,7 +13,7 @@ const geistSans = localFont({
 
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-serif",
+  variable: "--font-mono",
   weight: "100 900",
 });
 

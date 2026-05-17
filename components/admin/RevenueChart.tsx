@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -38,6 +38,7 @@ export default function RevenueChart() {
     <div className="h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData}>
+          <CartesianGrid stroke={gridColor} vertical={false} />
           <XAxis 
             dataKey="day" 
             stroke={textColor} 
@@ -60,8 +61,8 @@ export default function RevenueChart() {
               borderRadius: "8px",
             }}
             itemStyle={{ color: isDark ? "#ffffff" : "#000000" }}
-            formatter={(value: any, _name: any, item: any) =>
-              `${Number(value).toLocaleString("vi-VN")}đ (${item.payload.orderCount} đơn)`
+            formatter={(value: unknown, _name: unknown, item: { payload?: { orderCount?: number } }) =>
+              `${Number(value).toLocaleString("vi-VN")}đ (${item.payload?.orderCount ?? 0} đơn)`
             }
           />
           <Bar dataKey="revenue" fill="#2D6A4F" radius={[6, 6, 0, 0]} />

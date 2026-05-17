@@ -42,6 +42,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "cdn3.ivivu.com",
       },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
     ],
   },
   eslint: {

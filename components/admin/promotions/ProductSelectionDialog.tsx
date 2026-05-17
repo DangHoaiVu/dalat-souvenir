@@ -1,12 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
 import { 
   Search, 
   X, 
   Check, 
-  Layers, 
-  CircleDollarSign,
   Package,
   Loader2,
   Plus
@@ -156,8 +155,8 @@ export default function ProductSelectionDialog({
                       isSelected && "bg-primary/5 border-primary/20"
                     )}
                   >
-                    <div className="size-16 rounded-xl overflow-hidden bg-muted border border-border group-hover:border-primary/30 transition-colors shrink-0">
-                       <img src={product.image} alt={product.name} className="size-full object-cover" />
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted border border-border group-hover:border-primary/30 transition-colors">
+                       <Image src={product.image || "/placeholder.png"} alt={product.name} fill sizes="64px" className="object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                        <h4 className={cn(
