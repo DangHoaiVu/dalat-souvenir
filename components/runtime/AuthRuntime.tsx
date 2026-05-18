@@ -7,6 +7,11 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 
+function getGoogleAvatarUrl(metadata: Record<string, unknown> | undefined): string | undefined {
+  const value = metadata?.avatar_url ?? metadata?.picture;
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
 export default function AuthRuntime() {
   return (
     <>
@@ -51,6 +56,7 @@ function AuthListener() {
         name: session.user.user_metadata?.name || (session.user.email ?? ""),
         email: session.user.email ?? "",
         phone: session.user.user_metadata?.phone || "",
+        avatarUrl: getGoogleAvatarUrl(session.user.user_metadata),
         points: 0,
         role: baseRole,
       });
@@ -90,6 +96,7 @@ function AuthListener() {
             name: profile?.full_name || session.user.user_metadata?.name || (session.user.email ?? ""),
             email: session.user.email ?? "",
             phone: profile?.phone_number || session.user.user_metadata?.phone || "",
+            avatarUrl: getGoogleAvatarUrl(session.user.user_metadata),
             points: 0,
             role: isSeller ? "seller" : baseRole,
           });

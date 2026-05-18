@@ -89,6 +89,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  avatarUrl?: string;
   points: number;
   role: "customer" | "seller" | "admin";
 }

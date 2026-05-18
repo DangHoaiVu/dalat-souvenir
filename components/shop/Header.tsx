@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Gift, LogOut, Menu, Package, ShieldCheck, ShoppingCart, User, X } from "lucide-react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -142,6 +142,9 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger className="hidden size-10 items-center justify-center rounded-md border border-[--color-border] bg-surface shadow-sm transition-all hover:border-[--color-border-hover] sm:flex">
                 <Avatar className="size-8">
+                  {user?.avatarUrl && (
+                    <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+                  )}
                   <AvatarFallback className="bg-accent-light text-sm font-semibold text-accent">
                     {(user?.name ?? "U").slice(0, 1).toUpperCase()}
                   </AvatarFallback>
@@ -223,7 +226,14 @@ export default function Header() {
           {isLoggedIn ? (
             <>
               <Link href="/account/profile" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">
-                <User className="mr-2 size-4" />
+                <Avatar className="mr-2 size-6">
+                  {user?.avatarUrl && (
+                    <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+                  )}
+                  <AvatarFallback className="bg-accent-light text-xs font-semibold text-accent">
+                    {(user?.name ?? "U").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 TÃ i khoáº£n
               </Link>
               <Link href="/account/orders" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">

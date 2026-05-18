@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { 
@@ -210,7 +211,15 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-8">
       {/* Header Card */}
-      <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
+      <div className="relative rounded-2xl bg-card p-6 pr-24 shadow-sm border border-border">
+        <Avatar className="absolute right-6 top-1/2 size-14 -translate-y-1/2 border border-border bg-secondary">
+          {user.avatarUrl && (
+            <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+          )}
+          <AvatarFallback className="bg-accent-light text-lg font-bold text-accent">
+            {(user.name || user.email || "U").slice(0, 1).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
         <h1 className="text-xl font-bold text-foreground mb-1">
           Xin chào, {user.email}
         </h1>

@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LogOut, Package, ShoppingCart, Tag, UserRound } from "lucide-react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import LogoutConfirmDialog from "@/components/shop/LogoutConfirmDialog";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuthStore } from "@/stores/authStore";
 
 const navItems = [
   { href: "/", label: "Xem website", icon: Home },
@@ -21,6 +23,7 @@ const navItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
   const [pendingOrders, setPendingOrders] = useState(0);
 
   const fetchPendingOrders = useCallback(async () => {
@@ -58,10 +61,21 @@ export default function AdminSidebar() {
     <>
       <aside className="hidden h-screen w-[256px] shrink-0 flex-col bg-[#0c4a6e] text-white lg:flex">
         <div className="border-b border-sky-700/70 px-5 py-5">
-          <p className="text-lg font-bold tracking-normal text-white">Shop Lưu Niệm</p>
-          <p className="text-xs text-sky-200">Admin Panel</p>
+          <div className="flex items-center gap-3">
+            <Avatar className="size-10 border border-white/20 bg-white/10">
+              {user?.avatarUrl && (
+                <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+              )}
+              <AvatarFallback className="bg-sky-700 text-sm font-bold text-white">
+                {(user?.name ?? "A").slice(0, 1).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold tracking-normal text-white">Shop Lưu Niệm</p>
+              <p className="truncate text-xs text-sky-200">{user?.email || "Admin Panel"}</p>
+            </div>
+          </div>
         </div>
-
         <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => {
             const Icon = item.icon;
