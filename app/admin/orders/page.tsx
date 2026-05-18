@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import OrderDetailDrawer from "@/components/admin/OrderDetailDrawer";
 import { Badge } from "@/components/ui/badge";
@@ -71,9 +71,12 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const hasLoadedRef = useRef(false);
 
   const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
+    if (!hasLoadedRef.current) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const response = await authFetch("/api/orders", { cache: "no-store" });
@@ -87,6 +90,7 @@ export default function Page() {
       setError("Không thể tải dữ liệu đơn hàng");
     } finally {
       setIsLoading(false);
+      hasLoadedRef.current = true;
     }
   }, []);
 
@@ -126,25 +130,14 @@ export default function Page() {
   }, [fetchOrders]);
 
   useEffect(() => {
-    const refreshIntervalId = window.setInterval(() => {
-      void fetchOrders();
-    }, 15000);
-
     const tickerId = window.setInterval(() => {
       setNowMs(Date.now());
     }, 1000);
 
-    const onFocus = () => {
-      void fetchOrders();
-    };
-    window.addEventListener("focus", onFocus);
-
     return () => {
-      window.clearInterval(refreshIntervalId);
       window.clearInterval(tickerId);
-      window.removeEventListener("focus", onFocus);
     };
-  }, [fetchOrders]);
+  }, []);
 
   const handleUpdateStatus = async (orderId: number | string, status: Order["status"]) => {
     try {
