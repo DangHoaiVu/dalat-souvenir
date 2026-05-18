@@ -63,31 +63,31 @@ export default function Footer() {
             Liên hệ
           </h2>
           <ul className="mt-5 space-y-4 text-sm">
-            <li className="flex gap-3">
-              <MapPin className="mt-1 size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
-              <span>123 Phố Núi, Phường 1, Thành phố Đà Lạt, Lâm Đồng</span>
+            <li className="grid min-h-10 grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
+              <MapPin className="size-4 text-[var(--color-warm)]" aria-hidden="true" />
+              <span>Thành phố Qui Nhơn, Bình Định</span>
             </li>
-            <li className="flex min-h-10 items-center gap-3">
-              <Phone className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
-              <span>0900 000 000</span>
+            <li className="grid min-h-10 grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
+              <Phone className="size-4 text-[var(--color-warm)]" aria-hidden="true" />
+              <span>0979.777.777</span>
             </li>
-            <li className="flex min-h-10 items-center gap-3">
-              <Mail className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
-              <span>hello@shopluuniem.vn</span>
+            <li className="grid min-h-10 grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
+              <Mail className="size-4 text-[var(--color-warm)]" aria-hidden="true" />
+              <span>danghoaivu2004@gmail.com</span>
             </li>
-            <li className="flex min-h-10 items-center gap-3">
-              <Instagram className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
+            <li className="grid min-h-10 grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
+              <Instagram className="size-4 text-[var(--color-warm)]" aria-hidden="true" />
               <Link
                 href="https://www.instagram.com/lovehoaivulover/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+                className="inline-flex min-h-10 items-center text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
               >
                 @lovehoaivulover
               </Link>
             </li>
-            <li className="flex min-h-10 items-center gap-3">
-              <Clock className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
+            <li className="grid min-h-10 grid-cols-[16px_minmax(0,1fr)] items-center gap-3">
+              <Clock className="size-4 text-[var(--color-warm)]" aria-hidden="true" />
               <span>8:00 - 22:00 mỗi ngày</span>
             </li>
           </ul>
