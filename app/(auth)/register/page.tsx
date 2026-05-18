@@ -167,7 +167,7 @@ export default function Page() {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <InputField label="Họ và tên" placeholder="Nguyễn Văn A" autoComplete="name" errorMessage={form.formState.errors.name?.message} {...form.register("name")} />
-          <InputField label="Email" type="email" placeholder="you@example.com" autoComplete="email" errorMessage={form.formState.errors.email?.message} {...form.register("email")} />
+          <InputField label="Email" type="email" placeholder="" autoComplete="email" errorMessage={form.formState.errors.email?.message} {...form.register("email")} />
           <InputField label="Số điện thoại" type="tel" placeholder="0912 345 678" autoComplete="tel" hint="Tùy chọn" {...form.register("phone")} />
 
           <div className="space-y-1.5">

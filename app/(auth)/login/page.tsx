@@ -149,7 +149,7 @@ export default function Page() {
             label="Email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder=""
             errorMessage={form.formState.errors.email?.message}
             {...form.register("email")}
           />
