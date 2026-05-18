@@ -87,7 +87,7 @@ export default function ProductCard({
   };
 
   return (
-    <Card variant="interactive" className={cn("group h-full min-w-[240px] snap-start p-0", className)}>
+    <Card variant="interactive" className={cn("group h-full min-w-0 snap-start p-0", className)}>
       <div className="relative overflow-hidden rounded-t-lg bg-surface-muted">
         <Link href={`/products/${product.product_id}`} aria-label={`${text.detail} ${product.name}`}>
           <div className="relative aspect-[4/5] overflow-hidden">
@@ -137,7 +137,7 @@ export default function ProductCard({
         )}
 
         <Link href={`/products/${product.product_id}`} className="mt-2 block">
-          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-primary transition-colors group-hover:text-accent">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-primary transition-colors group-hover:text-accent sm:text-base">
             {product.name}
           </h3>
         </Link>
@@ -153,7 +153,7 @@ export default function ProductCard({
                 {formatPrice(product.comparePrice)}
               </p>
             )}
-            <p className="text-lg font-semibold text-accent">{formatPrice(product.price)}</p>
+            <p className="text-base font-semibold text-accent sm:text-lg">{formatPrice(product.price)}</p>
           </div>
           <Button
             type="button"

@@ -33,7 +33,7 @@ export default function AdminLayout({
               <h1 className="text-base font-semibold tracking-normal">Quản trị cửa hàng</h1>
             </div>
           </header>
-          <main className="p-4 pb-24 sm:p-6 lg:pb-6">{children}</main>
+          <main className="min-w-0 p-3 pb-24 sm:p-6 lg:pb-6">{children}</main>
         </div>
       </div>
     </AdminGuard>

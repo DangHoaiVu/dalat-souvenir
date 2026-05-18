@@ -139,7 +139,7 @@ export default function CheckoutModal({
   if (step === "success") {
     return (
       <GlassModal isOpen={isOpen} onClose={handleFinish} className="max-w-md">
-        <div className="flex flex-col items-center p-8 text-center">
+        <div className="flex flex-col items-center p-5 pt-14 text-center sm:p-8">
           <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-success-light text-success">
             <CheckCircle2 className="size-10" />
           </div>
@@ -168,8 +168,8 @@ export default function CheckoutModal({
 
   return (
     <GlassModal isOpen={isOpen} onClose={onClose} className="max-w-4xl">
-      <div className="flex max-h-[85vh] flex-col md:flex-row">
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+      <div className="flex max-h-[92svh] flex-col md:max-h-[85vh] md:flex-row">
+        <div className="flex-1 overflow-y-auto p-4 pt-14 custom-scrollbar sm:p-6 sm:pt-16 md:p-8">
           <h2 className="mb-6 text-2xl font-bold text-primary md:text-3xl">Thông tin giao hàng</h2>
 
           <form id="checkout-form" onSubmit={submitOrder} className="space-y-6">
@@ -222,7 +222,7 @@ export default function CheckoutModal({
           </form>
         </div>
 
-        <div className="flex flex-col border-t border-[--color-border] bg-surface-muted p-6 md:w-[380px] md:border-l md:border-t-0 md:p-8">
+        <div className="flex max-h-[42svh] flex-col border-t border-[--color-border] bg-surface-muted p-4 md:max-h-none md:w-[380px] md:border-l md:border-t-0 md:p-8">
           <h3 className="mb-6 border-b border-[--color-border] pb-4 text-2xl font-bold text-primary">Đơn hàng của bạn</h3>
 
           <div className="mb-6 flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
@@ -260,9 +260,9 @@ export default function CheckoutModal({
               </div>
             </div>
 
-            <div className="mb-8 flex items-end justify-between border-t border-[--color-border] pt-4">
+            <div className="mb-5 flex items-end justify-between border-t border-[--color-border] pt-4 md:mb-8">
               <span className="text-lg font-bold text-primary">Tổng cộng</span>
-              <span className="text-3xl font-bold text-accent">{formatPrice(totalPrice)}</span>
+              <span className="text-2xl font-bold text-accent md:text-3xl">{formatPrice(totalPrice)}</span>
             </div>
 
             <Button type="submit" form="checkout-form" size="lg" className="w-full" disabled={isSubmitting} isLoading={isSubmitting}>

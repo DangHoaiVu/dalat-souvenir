@@ -110,12 +110,12 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex min-h-16 flex-col items-center justify-center gap-1 px-2 text-[11px] font-semibold transition-colors",
+                "relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold transition-colors sm:px-2 sm:text-[11px]",
                 active ? "text-accent" : "text-tertiary hover:text-accent",
               )}
             >
               <Icon className="size-5" />
-              <span>{item.label}</span>
+              <span className="max-w-full truncate">{item.label}</span>
               {item.href === "/admin/orders" && pendingOrders > 0 && (
                 <span className="absolute right-[28%] top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] text-white">
                   {pendingOrders}

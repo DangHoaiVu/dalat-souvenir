@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Gift, Menu, ShieldCheck, ShoppingCart, User, X } from "lucide-react";
+import { Gift, LogOut, Menu, Package, ShieldCheck, ShoppingCart, User, X } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -82,7 +82,7 @@ export default function Header() {
         Bỏ qua đến nội dung chính
       </a>
 
-      <div className="mx-auto grid h-16 max-w-[1680px] grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:h-20 lg:px-10 2xl:px-12">
+      <div className="mx-auto grid h-16 max-w-[1680px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:h-20 lg:px-10 2xl:px-12">
         <Link href="/" className="flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-offset-4">
           <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={56} height={56} className="size-12 rounded-full object-contain md:size-[53px]" />
           <span className="hidden text-base font-bold text-accent sm:inline md:text-lg">
@@ -105,7 +105,7 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
           <Link href={giftSetUrl} className="hidden lg:block">
             <Button size="md">
               <Gift className="size-4" />
@@ -218,6 +218,31 @@ export default function Header() {
             <Link href="/admin/products" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-accent">
               <ShieldCheck className="mr-2 size-4" />
               Quản trị website
+            </Link>
+          )}
+          {isLoggedIn ? (
+            <>
+              <Link href="/account/profile" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">
+                <User className="mr-2 size-4" />
+                TÃ i khoáº£n
+              </Link>
+              <Link href="/account/orders" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">
+                <Package className="mr-2 size-4" />
+                ÄÆ¡n hÃ ng cá»§a tÃ´i
+              </Link>
+              <button
+                type="button"
+                onClick={() => setIsLogoutOpen(true)}
+                className="flex min-h-12 w-full items-center border-t border-[--color-border] px-6 py-3 text-left text-sm font-semibold text-error"
+              >
+                <LogOut className="mr-2 size-4" />
+                ÄÄƒng xuáº¥t
+              </button>
+            </>
+          ) : (
+            <Link href="/login" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-accent">
+              <User className="mr-2 size-4" />
+              ÄÄƒng nháº­p
             </Link>
           )}
         </nav>

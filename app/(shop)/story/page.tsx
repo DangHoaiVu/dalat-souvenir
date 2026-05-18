@@ -33,20 +33,20 @@ export default function StoryPage() {
       <main className="relative z-10 flex flex-col items-center bg-transparent">
         
         {/* HERO SECTION */}
-        <section className="flex min-h-screen w-full flex-col items-center justify-center px-4 text-center">
-          <div className="max-w-5xl space-y-8 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+        <section className="flex min-h-[calc(100svh-64px)] w-full flex-col items-center justify-center px-4 py-16 text-center">
+          <div className="max-w-5xl space-y-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 sm:space-y-8">
             <Image
               src="/logo.png"
               alt="Shop Lưu Niệm Đà Lạt Logo"
               width={512}
               height={192}
               priority
-              className="mx-auto w-64 rounded-full sm:w-80 md:w-[32rem] h-auto drop-shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-50 duration-1000 delay-300"
+              className="mx-auto h-auto w-44 rounded-full drop-shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-50 duration-1000 delay-300 sm:w-80 md:w-[32rem]"
             />
-            <h1 className="text-6xl font-black tracking-tighter sm:text-8xl md:text-9xl leading-[0.85] drop-shadow-2xl">
+            <h1 className="text-4xl font-black tracking-normal sm:text-7xl md:text-9xl leading-[0.95] drop-shadow-2xl">
               Từ Chuyến Đi<br />Đến Món Quà
             </h1>
-            <p className="mx-auto max-w-2xl text-xl font-medium tracking-wide text-white/80 sm:text-2xl drop-shadow-md">
+            <p className="mx-auto max-w-2xl text-base font-medium tracking-normal text-white/80 sm:text-2xl drop-shadow-md">
               Giữ lại một góc Đà Lạt sau mỗi hành trình.
             </p>
           </div>
@@ -57,17 +57,17 @@ export default function StoryPage() {
         </section>
 
         {/* CHAPTERS: ORIGIN & MISSION */}
-        <div className="w-full max-w-4xl px-6 space-y-64 pb-64">
+        <div className="w-full max-w-4xl space-y-28 px-4 pb-32 sm:px-6 md:space-y-64 md:pb-64">
           
           {/* 01. Khởi Nguyên */}
           <article className="space-y-10 group">
             <div className="space-y-3">
               <p className="text-sm font-bold uppercase tracking-[0.4em] text-lime-400">01. Khởi Nguyên</p>
-              <h2 className="text-5xl font-extrabold md:text-7xl tracking-tighter leading-none group-hover:text-lime-400 transition-colors duration-500">
+              <h2 className="text-3xl font-extrabold tracking-normal leading-tight transition-colors duration-500 group-hover:text-lime-400 sm:text-5xl md:text-7xl">
                 Những góc phố nhỏ trong làn sương.
               </h2>
             </div>
-            <div className="space-y-8 text-xl md:text-2xl text-white/80 leading-relaxed font-normal">
+            <div className="space-y-5 text-base font-normal leading-relaxed text-white/80 sm:text-xl md:text-2xl">
               <p>
                 Shop Lưu Niệm Đà Lạt khởi đầu từ mong muốn gom lại những ký ức rất nhỏ của một chuyến đi: một tấm postcard, chiếc móc khóa, chiếc túi vải hay món đồ len ấm tay.
                 Chúng tôi chọn cảm hứng từ <span className="text-white font-bold italic"> Hồ Xuân Hương, ga Đà Lạt, Langbiang và những mùa hoa</span>.
@@ -82,11 +82,11 @@ export default function StoryPage() {
           <article className="space-y-10 text-right group">
             <div className="space-y-3">
               <p className="text-sm font-bold uppercase tracking-[0.4em] text-lime-400">02. Sứ Mệnh</p>
-              <h2 className="text-5xl font-extrabold md:text-7xl tracking-tighter leading-none group-hover:text-lime-400 transition-colors duration-500">
+              <h2 className="text-3xl font-extrabold tracking-normal leading-tight transition-colors duration-500 group-hover:text-lime-400 sm:text-5xl md:text-7xl">
                 Kết nối ký ức và quà tặng.
               </h2>
             </div>
-            <div className="space-y-8 text-xl md:text-2xl text-white/80 leading-relaxed ml-auto max-w-2xl">
+            <div className="ml-auto max-w-2xl space-y-5 text-base leading-relaxed text-white/80 sm:text-xl md:text-2xl">
               <p>
                 Shop Lưu Niệm Đà Lạt muốn trở thành nơi du khách tìm thấy món quà phù hợp cho bạn bè, gia đình và chính mình sau mỗi lần ghé Đà Lạt.
               </p>
@@ -100,7 +100,7 @@ export default function StoryPage() {
           <article className="space-y-12">
             <div className="space-y-3 text-center">
               <p className="text-sm font-bold uppercase tracking-[0.4em] text-lime-400">03. Chiến Lược Tiếp Cận</p>
-              <h2 className="text-5xl font-extrabold md:text-7xl tracking-tighter leading-none">
+              <h2 className="text-3xl font-extrabold tracking-normal leading-tight sm:text-5xl md:text-7xl">
                 Kể chuyện bằng nội dung số.
               </h2>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
@@ -133,7 +133,7 @@ export default function StoryPage() {
           <article className="space-y-12">
             <div className="space-y-3">
               <p className="text-sm font-bold uppercase tracking-[0.4em] text-lime-400">04. Lộ Trình 2026</p>
-              <h2 className="text-5xl font-extrabold md:text-7xl tracking-tighter leading-none">
+              <h2 className="text-3xl font-extrabold tracking-normal leading-tight sm:text-5xl md:text-7xl">
                 Hành trình 6 tháng bứt phá.
               </h2>
             </div>
@@ -169,7 +169,7 @@ export default function StoryPage() {
         </div>
 
         {/* CORE VALUES & KPI SECTION - Removed the "black wall" to show the forest background */}
-        <section className="w-full py-32 border-y border-white/5 relative">
+        <section className="relative w-full border-y border-white/5 py-20 sm:py-32">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-24 text-center space-y-4">
               <p className="text-xl font-bold uppercase tracking-[0.4em] text-lime-400">KPI mục tiêu — 6 tháng đầu</p>
@@ -217,7 +217,7 @@ export default function StoryPage() {
         </section>
 
         {/* FINAL CTA */}
-        <section className="w-full py-64 text-center flex flex-col items-center px-6">
+        <section className="flex w-full flex-col items-center px-4 py-28 text-center sm:px-6 sm:py-64">
           <div className="space-y-12 max-w-4xl">
             <h2 className="text-3xl font-bold sm:text-5xl md:text-7xl tracking-tighter uppercase">
               Gói Trọn Đà Lạt.
@@ -225,7 +225,7 @@ export default function StoryPage() {
             <div className="pt-8">
               <Link 
                 href="/products" 
-                className="inline-flex h-20 items-center justify-center rounded-full bg-lime-400 px-16 text-xl font-black uppercase tracking-widest text-white transition-all hover:scale-105 shadow-[0_0_50px_rgba(var(--primary),0.3)]"
+                className="inline-flex min-h-14 items-center justify-center rounded-full bg-lime-400 px-8 text-sm font-black uppercase tracking-widest text-white transition-all hover:scale-105 shadow-[0_0_50px_rgba(var(--primary),0.3)] sm:h-20 sm:px-16 sm:text-xl"
               >
                 Trải Nghiệm Ngay
               </Link>

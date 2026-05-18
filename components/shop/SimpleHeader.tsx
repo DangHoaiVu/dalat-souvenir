@@ -11,7 +11,7 @@ const navLinks = [
 export default function SimpleHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--glass-bg)] shadow-[var(--shadow-sm)] backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-4 sm:px-6 lg:px-10 2xl:px-12">
+      <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-3 sm:px-6 lg:px-10 2xl:px-12">
         <Link
           href="/"
           className="flex items-center gap-2 transition-transform hover:scale-[1.02]"
@@ -23,7 +23,7 @@ export default function SimpleHeader() {
             height={40}
             className="h-10 w-auto"
           />
-          <span className="text-base font-semibold tracking-normal text-[var(--color-text-primary)] sm:text-lg">
+          <span className="hidden text-base font-semibold tracking-normal text-[var(--color-text-primary)] sm:inline sm:text-lg">
             Shop Lưu Niệm
           </span>
         </Link>

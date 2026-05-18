@@ -211,7 +211,7 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-primary">Đơn hàng của tôi</h1>
@@ -234,7 +234,7 @@ export default function Page() {
       {isLoading ? (
         <div className="grid gap-4">
           {[0, 1, 2].map((item) => (
-            <Card key={item} className="p-5">
+            <Card key={item} className="p-4 sm:p-5">
               <div className="h-6 w-44 rounded-md bg-surface-muted" />
               <div className="mt-4 h-4 w-full rounded-md bg-surface-muted" />
               <div className="mt-3 h-4 w-2/3 rounded-md bg-surface-muted" />
@@ -243,7 +243,7 @@ export default function Page() {
         </div>
       ) : orders.length === 0 ? (
         <Card className="items-center p-10 text-center">
-          <PackageCheck className="size-12 text-accent" />
+          <PackageCheck className="size-10 text-accent sm:size-12" />
           <h2 className="mt-4 text-xl font-bold text-primary">Chưa có đơn hàng</h2>
           <p className="mt-2 max-w-md text-sm text-secondary">
             Khi bạn đặt hàng thành công, lịch sử đơn và trạng thái xử lý sẽ hiển thị tại đây.
@@ -264,14 +264,14 @@ export default function Page() {
               <Card key={order.id} variant="flat" className="overflow-hidden p-0">
                 <button
                   type="button"
-                  className="flex w-full flex-col gap-4 p-5 text-left transition hover:bg-surface-muted/60 md:flex-row md:items-center md:justify-between"
+                  className="flex w-full flex-col gap-4 p-4 text-left transition hover:bg-surface-muted/60 sm:p-5 md:flex-row md:items-center md:justify-between"
                   onClick={() => {
                     setExpandedOrderId(expanded ? null : order.id);
                     if (editingOrderId && editingOrderId !== order.id) setEditingOrderId(null);
                   }}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent-light text-accent">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-light text-accent sm:size-11">
                       <Icon className="size-5" />
                     </div>
                     <div>
@@ -293,14 +293,14 @@ export default function Page() {
                 </button>
 
                 {expanded && (
-                  <div className="border-t border-[--color-border] p-5">
+                  <div className="border-t border-[--color-border] p-4 sm:p-5">
                     <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
                       <div>
                         <h3 className="font-bold text-primary">Sản phẩm đã đặt</h3>
                         <div className="mt-3 space-y-3">
                           {order.items.map((item) => (
-                            <div key={item.id} className="flex gap-3 rounded-lg border border-[--color-border] bg-surface p-3">
-                              <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-surface-muted">
+                            <div key={item.id} className="flex flex-wrap gap-3 rounded-lg border border-[--color-border] bg-surface p-3 sm:flex-nowrap">
+                              <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-surface-muted sm:size-16">
                                 <Image
                                   src={item.product.images?.[0] || item.product.image || "/placeholder.png"}
                                   alt={item.product.name}
@@ -315,7 +315,7 @@ export default function Page() {
                                   {formatPrice(item.price)} x {item.quantity}
                                 </p>
                               </div>
-                              <p className="text-sm font-bold text-primary">{formatPrice(item.subtotal)}</p>
+                              <p className="ml-auto text-sm font-bold text-primary">{formatPrice(item.subtotal)}</p>
                             </div>
                           ))}
                         </div>

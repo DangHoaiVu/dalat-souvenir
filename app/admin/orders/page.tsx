@@ -204,7 +204,7 @@ export default function Page() {
   );
 
   return (
-    <div>
+    <div className="min-w-0">
       <h1 className="mb-4 text-xl font-semibold">Quản lý đơn hàng</h1>
 
       <div className="mb-3 grid gap-2 md:grid-cols-3">
@@ -220,7 +220,7 @@ export default function Page() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-card text-card-foreground p-2 shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-card p-1 text-card-foreground shadow-sm sm:p-2">
         <Table>
           <TableHeader>
             <TableRow>

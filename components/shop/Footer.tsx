@@ -11,7 +11,7 @@ const quickLinks = [
 
 const socialLinks = [
   { label: "Facebook", href: "#", icon: Facebook },
-  { label: "Instagram", href: "#", icon: Instagram },
+  { label: "Instagram", href: "https://www.instagram.com/lovehoaivulover/", icon: Instagram },
   { label: "Youtube", href: "#", icon: Youtube },
 ];
 
@@ -32,6 +32,8 @@ export default function Footer() {
               <Link
                 key={label}
                 href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
                 className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-light)]"
                 aria-label={label}
               >
@@ -72,6 +74,17 @@ export default function Footer() {
             <li className="flex min-h-10 items-center gap-3">
               <Mail className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
               <span>hello@shopluuniem.vn</span>
+            </li>
+            <li className="flex min-h-10 items-center gap-3">
+              <Instagram className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />
+              <Link
+                href="https://www.instagram.com/lovehoaivulover/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+              >
+                @lovehoaivulover
+              </Link>
             </li>
             <li className="flex min-h-10 items-center gap-3">
               <Clock className="size-4 shrink-0 text-[var(--color-warm)]" aria-hidden="true" />

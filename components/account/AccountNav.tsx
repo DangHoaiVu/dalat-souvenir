@@ -43,7 +43,7 @@ export default function AccountNav({ mode = "both" }: { mode?: "desktop" | "mobi
       )}
 
       {(mode === "mobile" || mode === "both") && (
-      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-[--color-border] lg:hidden">
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-[--color-border] pb-1 [-webkit-overflow-scrolling:touch] lg:hidden">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
@@ -51,7 +51,7 @@ export default function AccountNav({ mode = "both" }: { mode?: "desktop" | "mobi
               key={tab.id}
               href={tab.href}
               className={cn(
-                "whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+                "whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors sm:px-4",
                 active ? "border-accent text-accent" : "border-transparent text-secondary hover:text-primary",
               )}
             >

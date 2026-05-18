@@ -120,7 +120,7 @@ export default function Page() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background-soft px-4 py-8 text-primary">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background-soft px-3 py-5 text-primary sm:px-4 sm:py-8">
       <div
         className="absolute inset-0 opacity-70"
         style={{
@@ -134,14 +134,14 @@ export default function Page() {
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 max-h-[92vh] w-full max-w-[480px] overflow-y-auto rounded-xl border border-[--color-border] bg-surface p-8 shadow-lg"
+        className="relative z-10 max-h-[92svh] w-full max-w-[480px] overflow-y-auto rounded-xl border border-[--color-border] bg-surface p-5 shadow-lg sm:p-8"
       >
         <div className="mb-6 text-center">
           <Link href="/" className="mb-4 inline-flex items-center gap-3">
             <Image src="/logo.png" alt="Logo" width={44} height={44} className="object-contain" />
             <span className="text-base font-bold text-accent">Đà Lạt Souvenir</span>
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Tạo tài khoản</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">Tạo tài khoản</h1>
           <p className="mt-2 text-sm text-secondary">Lưu thông tin mua hàng và theo dõi đơn dễ hơn.</p>
         </div>
 

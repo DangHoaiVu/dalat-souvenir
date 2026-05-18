@@ -62,14 +62,14 @@ export default function CartDrawer() {
 
   return (
     <GlassModal isOpen={isOpen} onClose={closeCart}>
-      <div className="border-b border-[--color-border] px-6 py-5">
+      <div className="border-b border-[--color-border] px-4 py-4 pr-14 sm:px-6 sm:py-5">
         <h2 className="text-2xl font-bold text-primary">Giỏ hàng của bạn</h2>
         <p className="mt-1 text-sm text-secondary">
           {user?.name ? `Xin chào, ${user.name}` : "Chọn những món quà Đà Lạt bạn muốn giữ lại."}
         </p>
       </div>
 
-      <div className="flex max-h-[76vh] flex-col md:h-[560px] md:flex-row">
+      <div className="flex max-h-[82svh] flex-col md:h-[560px] md:max-h-[76vh] md:flex-row">
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {items.length === 0 ? (
             <div className="flex h-full min-h-[360px] flex-col items-center justify-center px-6 text-center">
@@ -105,12 +105,12 @@ export default function CartDrawer() {
                   return (
                     <div
                       key={pid}
-                      className="group relative flex gap-4 rounded-lg border border-[--color-border] bg-surface p-4 shadow-card transition-all duration-200 hover:border-[--color-border-hover] hover:shadow-card-hover"
+                      className="group relative flex gap-3 rounded-lg border border-[--color-border] bg-surface p-3 shadow-card transition-all duration-200 hover:border-[--color-border-hover] hover:shadow-card-hover sm:gap-4 sm:p-4"
                     >
                       <div className="flex items-center pt-8">
                         <Checkbox checked={isSelected} onCheckedChange={() => toggleItemSelection(pid)} />
                       </div>
-                      <div className="relative size-24 shrink-0 overflow-hidden rounded-md bg-surface-muted">
+                      <div className="relative size-20 shrink-0 overflow-hidden rounded-md bg-surface-muted sm:size-24">
                         <Image
                           src={item.product.images?.[0] ?? item.product.image ?? "https://picsum.photos/seed/placeholder/200/200"}
                           alt={item.product.name}
@@ -123,13 +123,13 @@ export default function CartDrawer() {
                         <Link
                           href={`/products/${item.product.product_id}`}
                           onClick={closeCart}
-                          className="line-clamp-2 pr-8 text-base font-bold text-primary transition-colors hover:text-accent"
+                          className="line-clamp-2 pr-8 text-sm font-bold text-primary transition-colors hover:text-accent sm:text-base"
                         >
                           {item.product.name}
                         </Link>
                         <p className="mt-1 text-sm font-bold text-accent">{formatPrice(item.product.price)}</p>
 
-                        <div className="mt-auto flex items-center gap-3 pt-4">
+                        <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 sm:gap-3 sm:pt-4">
                           <div className="flex items-center rounded-md border border-[--color-border] bg-surface-muted p-0.5">
                             <button
                               onClick={() => updateQuantity(pid, item.quantity - 1)}
@@ -171,7 +171,7 @@ export default function CartDrawer() {
           )}
         </div>
 
-        <div className="flex flex-col justify-between border-t border-[--color-border] bg-surface-muted p-5 md:w-[320px] md:border-l md:border-t-0 md:p-6">
+        <div className="flex flex-col justify-between border-t border-[--color-border] bg-surface-muted p-4 md:w-[320px] md:border-l md:border-t-0 md:p-6">
           <div>
             <h3 className="mb-5 border-b border-[--color-border] pb-4 text-lg font-bold text-primary">Tóm tắt đơn hàng</h3>
             <div className="space-y-3 text-sm">

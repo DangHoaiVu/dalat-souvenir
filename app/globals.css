@@ -205,6 +205,7 @@
     font-size: 16px;
     font-weight: 400;
     line-height: 1.7;
+    overflow-x: hidden;
   }
 
   body::before {
@@ -216,6 +217,7 @@
   }
   html {
     @apply font-sans;
+    overflow-x: hidden;
   }
 
   main {

@@ -199,11 +199,11 @@ function ProductsPageContent() {
   );
 
   return (
-    <div className="mx-auto max-w-[1680px] px-4 py-10 sm:px-6 lg:px-10 2xl:px-12">
-      <div className="mb-8 flex items-start justify-between gap-3">
+    <div className="mx-auto max-w-[1680px] px-3 py-7 sm:px-6 sm:py-10 lg:px-10 2xl:px-12">
+      <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Cửa hàng</p>
-          <h1 className="mt-2 text-4xl font-bold text-primary">Sản phẩm</h1>
+          <h1 className="mt-2 text-3xl font-bold text-primary sm:text-4xl">Sản phẩm</h1>
           <p className="mt-2 text-sm font-medium text-secondary">
             Hiển thị {filteredProducts.length} sản phẩm
           </p>
@@ -257,7 +257,7 @@ function ProductsPageContent() {
         </div>
       )}
 
-      <div className="grid items-start gap-8 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-w-0 items-start gap-5 sm:gap-8 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="sticky top-28 hidden md:block">
           <Card variant="flat" className="border-[--color-border-strong] p-6 shadow-md">
             {filterPanel}
@@ -265,13 +265,13 @@ function ProductsPageContent() {
         </aside>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.product_id}
