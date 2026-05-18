@@ -57,31 +57,19 @@ function AuthListener() {
 
       void (async () => {
         try {
-          let { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, phone_number")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
+          let profile: { full_name?: string | null; phone_number?: string | null } | null = null;
 
-          if (!profile && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-            const { error } = await supabase
-              .from("profiles")
-              .upsert(
-                {
-                  user_id: session.user.id,
-                  full_name: session.user.user_metadata?.name || (session.user.email ?? ""),
-                  phone_number: session.user.user_metadata?.phone || "",
-                },
-                { onConflict: "user_id" },
-              );
+          if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+            const profileResponse = await fetch("/api/auth/sync-profile", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
 
-            if (!error) {
-              const res = await supabase
-                .from("profiles")
-                .select("full_name, phone_number")
-                .eq("user_id", session.user.id)
-                .maybeSingle();
-              profile = res.data;
+            if (profileResponse.ok) {
+              const payload = await profileResponse.json();
+              profile = payload.profile ?? null;
             }
           }
 

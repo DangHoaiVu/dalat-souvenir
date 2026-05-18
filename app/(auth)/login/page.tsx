@@ -64,7 +64,22 @@ export default function Page() {
   };
 
   const googleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    const params = new URLSearchParams(window.location.search);
+    const requestedPath = params.get("redirect") ?? params.get("callbackUrl");
+    const callback =
+      requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
+        ? requestedPath
+        : "/";
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(callback)}`,
+        queryParams: {
+          prompt: "select_account",
+        },
+      },
+    });
     if (error) toast.error(error.message);
   };
 

@@ -68,7 +68,15 @@ export default function Page() {
   const strength = useMemo(() => getStrength(password || ""), [password]);
 
   const googleSignup = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        queryParams: {
+          prompt: "select_account",
+        },
+      },
+    });
     if (error) toast.error(error.message);
   };
 
