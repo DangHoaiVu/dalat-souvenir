@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { InputField } from "@/components/ui/input";
+import { AuthBackgroundDecor, AuthCardMascot } from "@/components/auth/AuthDecor";
 import { supabase } from "@/lib/supabaseClient";
 
 const schema = z.object({
@@ -100,20 +101,15 @@ export default function Page() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background-soft px-3 py-6 text-primary sm:px-4 sm:py-10">
-      <div
-        className="absolute inset-0 opacity-70"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, var(--color-border-hover) 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-      />
+      <AuthBackgroundDecor />
 
+      <div className="relative z-10 w-full max-w-[440px]">
+        <AuthCardMascot />
       <motion.section
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[440px] rounded-xl border border-[--color-border] bg-surface p-5 shadow-lg sm:p-8"
+        className="relative w-full rounded-xl border border-[--color-border] bg-surface/95 p-5 shadow-xl shadow-sky-950/10 backdrop-blur sm:p-8"
       >
         <div className="mb-7 text-center">
           <Link href="/" className="mb-4 inline-flex items-center gap-3">
@@ -206,6 +202,7 @@ export default function Page() {
           </Link>
         </p>
       </motion.section>
+      </div>
     </main>
   );
 }
