@@ -10,9 +10,14 @@ const quickLinks = [
 ];
 
 const socialLinks = [
-  { label: "Facebook", href: "#", icon: Facebook },
-  { label: "Instagram", href: "https://www.instagram.com/lovehoaivulover/", icon: Instagram },
-  { label: "Youtube", href: "#", icon: Youtube },
+  { label: "Facebook", href: "#", icon: Facebook, className: "border-[#1877F2]/30 bg-[#1877F2] text-white hover:bg-[#166FE5]" },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/lovehoaivulover/",
+    icon: Instagram,
+    className: "border-pink-400/30 bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white hover:brightness-110",
+  },
+  { label: "Youtube", href: "#", icon: Youtube, className: "border-[#FF0000]/30 bg-[#FF0000] text-white hover:bg-[#E60000]" },
 ];
 
 export default function Footer() {
@@ -28,16 +33,16 @@ export default function Footer() {
             Đặc sản, quà lưu niệm và sản phẩm thủ công được tuyển chọn từ Đà Lạt, đóng gói chỉn chu để làm quà hoặc dùng hằng ngày.
           </p>
           <div className="mt-6 flex items-center gap-3">
-            {socialLinks.map(({ label, href, icon: Icon }) => (
+            {socialLinks.map(({ label, href, icon: Icon, className }) => (
               <Link
                 key={label}
                 href={href}
                 target={href.startsWith("http") ? "_blank" : undefined}
                 rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--color-accent-light)]"
+                className={`inline-flex size-11 items-center justify-center rounded-full border shadow-sm transition duration-150 ease-in-out hover:-translate-y-px hover:shadow-md ${className}`}
                 aria-label={label}
               >
-                <Icon className="size-4" aria-hidden="true" />
+                <Icon className="size-4" strokeWidth={2.4} aria-hidden="true" />
               </Link>
             ))}
           </div>
