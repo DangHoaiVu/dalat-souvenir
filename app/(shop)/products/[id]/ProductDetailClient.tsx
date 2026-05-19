@@ -77,14 +77,14 @@ export default function ProductDetailClient({
   return (
     <div className="bg-background pb-28 lg:pb-24">
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-tertiary">
+        <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold uppercase leading-none tracking-[0.12em] text-tertiary sm:text-xs [&_a]:inline-flex [&_a]:min-h-7 [&_a]:items-center" aria-label="Breadcrumb">
           <Link href="/" className="transition-colors hover:text-accent">Trang chủ</Link>
-          <ChevronRight className="size-3" />
-          <Link href={`/products?category=${product.category?.slug ?? ""}`} className="transition-colors hover:text-accent">
+          <ChevronRight className="size-3 shrink-0 self-center" />
+          <Link href={`/products?category=${product.category?.slug ?? ""}`} className="inline-flex min-h-7 max-w-[48vw] items-center truncate transition-colors hover:text-accent sm:max-w-none">
             {product.category?.name}
           </Link>
-          <ChevronRight className="size-3" />
-          <span className="max-w-[200px] truncate text-primary">{product.name}</span>
+          <ChevronRight className="size-3 shrink-0 self-center" />
+          <span className="inline-flex min-h-7 max-w-[72vw] items-center truncate text-primary sm:max-w-[320px]">{product.name}</span>
         </nav>
       </div>
 
