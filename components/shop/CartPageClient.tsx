@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Minus, PackageCheck, Plus, RefreshCw, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, Clock3, Minus, PackageCheck, PackageOpen, Plus, RefreshCw, ShoppingCart, Sparkles, Trash2, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ interface GroupedOrder {
   created_at: string;
   status: string;
   estimated_arrival_at: string | null;
+  total_price: number;
   items: Product[];
 }
 
@@ -61,6 +62,23 @@ function statusLabel(status: string) {
   if (status === "cancelled") return "Đã hủy";
   if (status === "confirmed") return "Đã xác nhận";
   return "Đang xử lý";
+}
+
+function purchaseStatusLabel(status: string) {
+  if (status === "delivered") return "Hoàn thành";
+  if (status === "shipping" || status === "delivering") return "Đang giao";
+  if (status === "cancelled") return "Đã hủy";
+  if (status === "confirmed") return "Đã xác nhận";
+  if (status === "completed") return "Chờ xác nhận";
+  return "Đang xử lý";
+}
+
+function purchaseStatusTone(status: string) {
+  if (status === "delivered") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300";
+  if (status === "shipping" || status === "delivering") return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-300";
+  if (status === "cancelled") return "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300";
+  if (status === "confirmed") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
+  return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300";
 }
 
 export default function CartPageClient({ initialRecommendations }: CartPageClientProps) {
@@ -115,7 +133,7 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
         setIsLoadingHistory(true);
         const { data: orders, error: ordersError } = await supabase
           .from("orders")
-          .select("order_id, created_at, status, estimated_arrival_at")
+          .select("order_id, created_at, status, estimated_arrival_at, total_price")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(10);
@@ -165,6 +183,7 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
               created_at: order.created_at,
               status: String(order.status ?? "pending"),
               estimated_arrival_at: order.estimated_arrival_at ?? null,
+              total_price: Number(order.total_price ?? 0),
               items: orderItems as Product[],
             };
           })
@@ -433,6 +452,194 @@ export default function CartPageClient({ initialRecommendations }: CartPageClien
       </div>
 
       {mounted && isLoggedIn && (
+        <section className="mt-16 border-t border-dashed border-[--color-border] pt-10">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Lịch sử</p>
+              <h2 className="mt-1 text-2xl font-bold text-primary">Đã mua</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-secondary">
+                Theo dõi nhanh các đơn gần đây, trạng thái giao hàng và quay lại mua những món bạn thích.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setRefreshKey((prev) => prev + 1)} disabled={isLoadingHistory} className="w-full sm:w-auto">
+              <RefreshCw className={cn("size-4", isLoadingHistory && "animate-spin")} />
+              Làm mới
+            </Button>
+          </div>
+
+          {!isInitialized || isLoadingHistory ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((item) => (
+                <OrderRowSkeleton key={item} />
+              ))}
+            </div>
+          ) : purchasedOrders.length > 0 ? (
+            <div className="grid gap-4">
+              {purchasedOrders.map((order) => {
+                const previewItems = order.items.slice(0, 4);
+                const orderTotal = order.total_price || order.items.reduce((sum, item) => sum + item.price, 0);
+                const eta = formatEtaCountdown(order.estimated_arrival_at, nowMs);
+                const isShipping = order.status === "shipping" || order.status === "delivering";
+                const canConfirm = order.status === "completed";
+
+                return (
+                  <Card key={order.order_id} variant="flat" className="overflow-hidden p-0">
+                    <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_260px]">
+                      <div className="p-4 sm:p-5">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex min-w-0 gap-3">
+                            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-light text-accent">
+                              {isShipping ? <Truck className="size-5" /> : <PackageCheck className="size-5" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-bold text-primary">#{order.order_id.slice(0, 8).toUpperCase()}</p>
+                                <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]", purchaseStatusTone(order.status))}>
+                                  {purchaseStatusLabel(order.status)}
+                                </span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CalendarDays className="size-3.5" />
+                                  {new Date(order.created_at).toLocaleString("vi-VN")}
+                                </span>
+                                {eta && (
+                                  <span className="inline-flex items-center gap-1.5 font-semibold text-accent">
+                                    <Clock3 className="size-3.5" />
+                                    {eta}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="sm:text-right">
+                            <p className="text-xs text-secondary">Tổng tiền</p>
+                            <p className="mt-1 text-xl font-bold text-accent">{formatPrice(orderTotal)}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center">
+                            {previewItems.map((item, itemIndex) => (
+                              <div
+                                key={`${order.order_id}-${item.product_id}-${itemIndex}`}
+                                className={cn(
+                                  "relative size-14 overflow-hidden rounded-xl border-2 border-surface bg-surface-muted shadow-sm",
+                                  itemIndex > 0 && "-ml-3",
+                                )}
+                                style={{ zIndex: previewItems.length - itemIndex }}
+                              >
+                                <Image
+                                  src={item.images?.[0] ?? item.image ?? "/placeholder.png"}
+                                  alt={item.name}
+                                  fill
+                                  sizes="56px"
+                                  className="object-cover"
+                                />
+                              </div>
+                            ))}
+                            <div className="ml-3 min-w-0">
+                              <p className="line-clamp-1 text-sm font-bold text-primary">
+                                {order.items[0]?.name ?? "Đơn hàng"}
+                              </p>
+                              <p className="text-xs text-secondary">
+                                {order.items.length} sản phẩm trong đơn
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            {canConfirm && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => void handleConfirmReceived(order.order_id)}
+                                disabled={confirmingOrderId === order.order_id}
+                                isLoading={confirmingOrderId === order.order_id}
+                              >
+                                Đã nhận hàng
+                              </Button>
+                            )}
+                            <Link href={`/account/orders?orderId=${order.order_id}`}>
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                Xem chi tiết
+                                <ArrowRight className="size-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-[--color-border] bg-surface-muted/50 p-4 sm:p-5 lg:border-l lg:border-t-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-tertiary">Gợi ý nhanh</p>
+                        <div className="mt-4 space-y-3">
+                          {previewItems.slice(0, 2).map((item) => (
+                            <Link key={`${order.order_id}-quick-${item.product_id}`} href={`/products/${item.product_id}`} className="flex items-center gap-3 rounded-lg border border-[--color-border] bg-surface p-2 transition hover:border-accent/50">
+                              <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-surface-muted">
+                                <Image src={item.images?.[0] ?? item.image ?? "/placeholder.png"} alt={item.name} fill sizes="40px" className="object-cover" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="line-clamp-1 text-xs font-bold text-primary">{item.name}</p>
+                                <p className="text-[11px] text-accent">Mua lại</p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="relative overflow-hidden p-0">
+              <div className="absolute -right-16 -top-16 size-44 rounded-full bg-accent-light" />
+              <div className="absolute -bottom-20 left-10 size-52 rounded-full bg-sky-100/60 dark:bg-sky-900/20" />
+              <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+                  <div className="mb-5 grid size-16 place-items-center rounded-2xl bg-accent-light text-accent shadow-sm">
+                    <PackageOpen className="size-8" />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Chưa có lịch sử</p>
+                  <h3 className="mt-2 text-2xl font-bold text-primary">Bắt đầu đơn hàng đầu tiên</h3>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-secondary">
+                    Khi bạn đặt hàng thành công, trạng thái xử lý, sản phẩm đã mua và gợi ý mua lại sẽ xuất hiện tại đây.
+                  </p>
+                  <div className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                    <Link href="/products">
+                      <Button className="w-full sm:w-auto">
+                        Mua sắm ngay
+                        <ArrowRight className="size-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/products?category=qua-tang">
+                      <Button variant="outline" className="w-full sm:w-auto">
+                        <Sparkles className="size-4" />
+                        Xem bộ quà tặng
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="hidden rounded-2xl border border-[--color-border] bg-surface/80 p-5 shadow-sm lg:block">
+                  <div className="flex items-center gap-3">
+                    <div className="grid size-11 place-items-center rounded-xl bg-success-light text-success">
+                      <CheckCircle2 className="size-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-primary">Theo dõi dễ hơn</p>
+                      <p className="text-xs text-secondary">Mã đơn, trạng thái và sản phẩm cùng một nơi.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </section>
+      )}
+
+      {false && mounted && isLoggedIn && (
         <section className="mt-16 border-t border-dashed border-[--color-border] pt-10">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
