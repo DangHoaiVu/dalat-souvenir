@@ -68,6 +68,9 @@ export default function Header() {
   const isActive = (href: string) =>
     href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
+  const avatarFallback = (user?.name ?? "U").slice(0, 1).toUpperCase();
+  const avatarAlt = user?.name || user?.email || "Avatar";
+
   return (
     <header
       className={cn(
@@ -143,10 +146,10 @@ export default function Header() {
               <DropdownMenuTrigger className="hidden size-10 items-center justify-center rounded-md border border-[--color-border] bg-surface shadow-sm transition-all hover:border-[--color-border-hover] sm:flex">
                 <Avatar className="size-8">
                   {user?.avatarUrl && (
-                    <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+                    <AvatarImage src={user.avatarUrl} alt={avatarAlt} referrerPolicy="no-referrer" />
                   )}
                   <AvatarFallback className="bg-accent-light text-sm font-semibold text-accent">
-                    {(user?.name ?? "U").slice(0, 1).toUpperCase()}
+                    {avatarFallback}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
@@ -228,17 +231,17 @@ export default function Header() {
               <Link href="/account/profile" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">
                 <Avatar className="mr-2 size-6">
                   {user?.avatarUrl && (
-                    <AvatarImage src={user.avatarUrl} alt={user.name || user.email || "Avatar"} referrerPolicy="no-referrer" />
+                    <AvatarImage src={user.avatarUrl} alt={avatarAlt} referrerPolicy="no-referrer" />
                   )}
                   <AvatarFallback className="bg-accent-light text-xs font-semibold text-accent">
-                    {(user?.name ?? "U").slice(0, 1).toUpperCase()}
+                    {avatarFallback}
                   </AvatarFallback>
                 </Avatar>
-                TÃ i khoáº£n
+                Tài khoản
               </Link>
               <Link href="/account/orders" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-secondary">
                 <Package className="mr-2 size-4" />
-                ÄÆ¡n hÃ ng cá»§a tÃ´i
+                Đơn hàng của tôi
               </Link>
               <button
                 type="button"
@@ -246,13 +249,13 @@ export default function Header() {
                 className="flex min-h-12 w-full items-center border-t border-[--color-border] px-6 py-3 text-left text-sm font-semibold text-error"
               >
                 <LogOut className="mr-2 size-4" />
-                ÄÄƒng xuáº¥t
+                Đăng xuất
               </button>
             </>
           ) : (
             <Link href="/login" className="flex min-h-12 items-center border-t border-[--color-border] px-6 py-3 text-sm font-semibold text-accent">
               <User className="mr-2 size-4" />
-              ÄÄƒng nháº­p
+              Đăng nhập
             </Link>
           )}
         </nav>
