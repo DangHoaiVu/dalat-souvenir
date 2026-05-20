@@ -11,6 +11,25 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Project structure
+
+The app is kept as a full-stack Next.js project, but business logic is grouped by
+domain for easier maintenance:
+
+```txt
+app/                 Next.js App Router pages, layouts, and API routes
+components/          UI components grouped by area: shop, admin, auth, account
+features/            Domain logic: auth, products, cart, orders, AI
+lib/supabase/        Supabase browser/admin client setup
+stores/              Zustand state stores
+types/               Shared TypeScript models
+supabase/            SQL seed and migration/reference files
+docker/              Docker usage notes
+docs/                Report notes, screenshots, and schema documentation
+```
+
+See `docs/project-structure.md` for the detailed layout.
+
 ## Required environment variables
 
 Set these locally in `.env.local` and in Vercel Project Settings -> Environment Variables:
@@ -47,3 +66,18 @@ npm run build
 ```
 
 The current `next.config.mjs` allows production builds to continue even if TypeScript or ESLint has non-blocking issues. Tighten that after the Supabase foundation and frontend are stable.
+
+## Docker
+
+Docker is configured for local/staging container runs and for the final project
+containerization requirement. Vercel deployment still works normally without
+using Docker.
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3000`.
+
+Make sure `.env.local` contains the required Supabase and Gemini variables before
+running the container. More details are in `docker/README.md`.

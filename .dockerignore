@@ -1,0 +1,16 @@
+.git
+.next
+node_modules
+out
+build
+coverage
+temp
+tmp
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.vercel
+Dockerfile
+docker-compose.yml
