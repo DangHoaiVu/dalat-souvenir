@@ -36,7 +36,7 @@ export default function StoryPage() {
         <section className="flex min-h-[calc(100svh-64px)] w-full flex-col items-center justify-center px-4 py-16 text-center">
           <div className="max-w-5xl space-y-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 sm:space-y-8">
             <Image
-              src="/logo.png"
+              src="/logo-rounded.png"
               alt="Shop Lưu Niệm Đà Lạt Logo"
               width={512}
               height={192}

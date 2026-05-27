@@ -17,7 +17,7 @@ export default function SimpleHeader() {
           className="flex items-center gap-2 transition-transform hover:scale-[1.02]"
         >
           <Image
-            src="/logo.png"
+            src="/logo-rounded.png"
             alt="Shop Lưu Niệm Đà Lạt Logo"
             width={120}
             height={40}

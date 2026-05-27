@@ -29,8 +29,9 @@ export const metadata: Metadata = {
     locale: "vi_VN",
   },
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: "/logo-rounded.png",
+    shortcut: "/logo-rounded.png",
+    apple: "/logo-rounded.png",
   },
 };
 

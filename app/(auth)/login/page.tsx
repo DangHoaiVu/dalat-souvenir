@@ -113,7 +113,7 @@ export default function Page() {
       >
         <div className="mb-7 text-center">
           <Link href="/" className="mb-4 inline-flex items-center gap-3">
-            <Image src="/logo.png" alt="Logo" width={44} height={44} className="object-contain" />
+            <Image src="/logo-rounded.png" alt="Logo" width={48} height={48} className="size-12 rounded-full border border-border bg-white object-contain shadow-sm" />
             <span className="text-base font-bold text-accent">Đà Lạt Souvenir</span>
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">Đăng nhập</h1>

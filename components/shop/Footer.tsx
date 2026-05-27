@@ -26,7 +26,7 @@ export default function Footer() {
       <div className="mx-auto grid max-w-[1680px] gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_1fr] lg:px-10 2xl:px-12">
         <div>
           <Link href="/" className="inline-flex min-h-11 items-center gap-3">
-            <Image src="/logo.png" alt="Logo Đà Lạt Souvenir" width={48} height={48} className="size-12 rounded-full object-contain" loading="lazy" />
+            <Image src="/logo-rounded.png" alt="Logo Đà Lạt Souvenir" width={48} height={48} className="size-12 rounded-full object-contain" loading="lazy" />
             <span className="text-lg font-semibold tracking-normal text-[var(--color-text-primary)]">Đà Lạt Souvenir</span>
           </Link>
           <p className="mt-5 max-w-sm text-sm leading-7">
