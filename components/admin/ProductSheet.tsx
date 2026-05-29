@@ -35,8 +35,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { uploadAdminImage } from "@/lib/admin-image-upload";
 import { authFetch } from "@/lib/auth-fetch";
-import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
@@ -194,22 +194,9 @@ export default function ProductSheet({
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         
-        console.log("[ProductSheet] Uploading to Supabase bucket 'Products'...");
-        const { error } = await supabase.storage.from('Products').upload(fileName, compressedBlob, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-        
-        if (error) {
-          console.error("[ProductSheet] Supabase upload error:", error);
-          setSaveError('Lỗi tải ảnh lên: ' + error.message);
-          setIsSaving(false);
-          setSaveStatus("");
-          return;
-        } else {
-          finalImageUrl = supabase.storage.from('Products').getPublicUrl(fileName).data.publicUrl;
-          console.log("[ProductSheet] Upload success. URL:", finalImageUrl);
-        }
+        console.log("[ProductSheet] Uploading image through admin API...");
+        finalImageUrl = await uploadAdminImage(compressedBlob, "product", fileName);
+        console.log("[ProductSheet] Upload success. URL:", finalImageUrl);
       } catch (err) {
         console.error("[ProductSheet] Unexpected error during image process:", err);
         setSaveError('Đã xảy ra lỗi khi xử lý ảnh.');

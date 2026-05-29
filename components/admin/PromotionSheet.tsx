@@ -28,8 +28,8 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { uploadAdminImage } from "@/lib/admin-image-upload";
 import { authFetch } from "@/lib/auth-fetch";
-import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import type { Promotion } from "@/types";
 
@@ -170,19 +170,7 @@ export default function PromotionSheet({
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `promo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         
-        const { error } = await supabase.storage.from('Promotions').upload(fileName, compressedBlob, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-        
-        if (error) {
-          setSaveError('Lỗi tải ảnh lên: ' + error.message);
-          setIsSaving(false);
-          setSaveStatus("");
-          return;
-        } else {
-          finalImageUrl = supabase.storage.from('Promotions').getPublicUrl(fileName).data.publicUrl;
-        }
+        finalImageUrl = await uploadAdminImage(compressedBlob, "promotion", fileName);
       } catch {
         setSaveError('Đã xảy ra lỗi khi xử lý ảnh.');
         setIsSaving(false);
