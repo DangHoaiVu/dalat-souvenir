@@ -106,97 +106,6 @@ function formatProductLine(product: ChatProduct) {
   return `- **${product.name || "Sản phẩm"}**: **${formatVnd(price)}${unitText}**${stockText}`;
 }
 
-function getProductSearchText(product: ChatProduct) {
-  return `${product.name || ""} ${product.description || ""}`.toLowerCase();
-}
-
-function findSuggestedProducts(products: ChatProduct[], keywords: string[], limit = 4) {
-  return products
-    .filter((product) => {
-      const searchText = getProductSearchText(product);
-      return keywords.some((keyword) => searchText.includes(keyword));
-    })
-    .sort((a, b) => getProductPrice(a) - getProductPrice(b))
-    .slice(0, limit);
-}
-
-function formatProductSuggestions(products: ChatProduct[]) {
-  if (products.length === 0) return "";
-  return [
-    "",
-    "Một vài món phù hợp trong shop:",
-    ...products.map(formatProductLine),
-  ].join("\n");
-}
-
-function buildChildAdviceReply(products: ChatProduct[]) {
-  const safeGiftProducts = findSuggestedProducts(products, [
-    "sticker",
-    "sổ",
-    "so tay",
-    "móc khóa",
-    "moc khoa",
-    "gấu",
-    "gau",
-    "túi",
-    "tui",
-    "nón",
-    "non",
-    "khăn",
-    "khan",
-    "len",
-    "chuông gió",
-    "chuong gio",
-  ]);
-
-  const lightFoodProducts = findSuggestedProducts(products, [
-    "dâu",
-    "dau",
-    "mứt",
-    "mut",
-    "hồng",
-    "hong",
-    "bánh",
-    "banh",
-  ], 3);
-
-  return [
-    "Dạ với bé khoảng **5 tuổi**, em khuyên mình nên ưu tiên các món **an toàn, nhẹ, dễ dùng và không có chi tiết nhỏ dễ nuốt** ạ.",
-    "",
-    "**Phù hợp hơn:** sticker, sổ tay, móc khóa bản lớn, túi tote nhỏ, nón/khăn len, gấu bông hoặc đồ lưu niệm mềm.",
-    "**Đồ ăn đặc sản:** nếu chọn mứt, dâu sấy, hồng treo hoặc bánh thì nên cho bé dùng **lượng nhỏ**, có phụ huynh kiểm soát và lưu ý dị ứng/đường.",
-    "**Không nên tự ý dùng như sản phẩm sức khỏe:** trà thảo mộc/atiso hoặc sản phẩm có công dụng thanh nhiệt nên hỏi phụ huynh hoặc bác sĩ nếu bé có bệnh nền.",
-    formatProductSuggestions(safeGiftProducts.length > 0 ? safeGiftProducts : lightFoodProducts),
-  ].filter(Boolean).join("\n");
-}
-
-function buildGiftAdviceReply(lastMessage: string, products: ChatProduct[]) {
-  const isForPartner = /(người yêu|bạn gái|bạn trai|crush|lover|vợ|chồng)/.test(lastMessage);
-  const isForParent = /(mẹ|ba|bố|cha|phụ huynh|ông|bà)/.test(lastMessage);
-  const isForTeacher = /(thầy|cô|giáo viên|giảng viên)/.test(lastMessage);
-
-  if (!isForPartner && !isForParent && !isForTeacher) return null;
-
-  const keywords = isForPartner
-    ? ["nến", "nen", "hoa", "len", "túi", "tui", "vòng", "vong", "gấu", "gau"]
-    : isForParent
-      ? ["trà", "tra", "atiso", "hồng", "hong", "mứt", "mut", "dâu", "dau", "set"]
-      : ["trà", "tra", "atiso", "sổ", "so tay", "set", "hộp", "hop", "mứt", "mut"];
-  const suggestions = findSuggestedProducts(products, keywords, 5);
-  const target = isForPartner ? "người yêu/crush" : isForParent ? "người lớn trong gia đình" : "thầy cô";
-
-  return [
-    `Dạ nếu mua quà cho **${target}**, em gợi ý chọn món có cảm giác lịch sự, dễ dùng và có câu chuyện Đà Lạt rõ ràng ạ.`,
-    "",
-    isForPartner
-      ? "Mình có thể ưu tiên món xinh, thơm, mềm mại như nến thơm, đồ len, túi nhỏ hoặc quà handmade."
-      : isForParent
-        ? "Mình có thể ưu tiên đặc sản dễ dùng như trà atiso, hồng treo, mứt/dâu sấy hoặc set quà đóng gói gọn gàng."
-        : "Mình có thể ưu tiên set trà, đặc sản đóng hộp, sổ tay hoặc món quà trang nhã, không quá cá nhân.",
-    formatProductSuggestions(suggestions),
-  ].filter(Boolean).join("\n");
-}
-
 function buildPriceReply(lastMessage: string, products: ChatProduct[]) {
   const pricedProducts = products
     .filter((product) => product.name && getProductPrice(product) > 0)
@@ -264,13 +173,6 @@ function buildPriceReply(lastMessage: string, products: ChatProduct[]) {
 
 function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = []) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
-
-  if (/(trẻ em|tre em|em bé|em be|bé|be|5 tuổi|5 tuoi|trẻ nhỏ|tre nho|con nít|con nit)/.test(lastMessage)) {
-    return buildChildAdviceReply(products);
-  }
-
-  const giftAdvice = buildGiftAdviceReply(lastMessage, products);
-  if (giftAdvice) return giftAdvice;
 
   if (
     lastMessage.includes("thanh toán") ||
@@ -377,13 +279,9 @@ function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = [
   }
 
   return [
-    "Dạ em hiểu câu hỏi của anh/chị ạ.",
+    "Dạ em chào anh/chị! Em là trợ lý ảo của Đà Lạt Souvenir.",
     "",
-    "Với ngữ cảnh của Đà Lạt Souvenir, em có thể hỗ trợ theo các hướng như: chọn quà theo người nhận, tư vấn đặc sản/đồ lưu niệm, so sánh giá, kiểm tra khuyến mãi, phương thức thanh toán, giao hàng và cách đặt đơn.",
-    "",
-    products.length > 0
-      ? `Hiện shop đang có **${products.length} sản phẩm** để em dựa vào tư vấn. Anh/chị có thể hỏi cụ thể hơn, ví dụ: “quà cho bé 5 tuổi”, “món dưới 100k”, “quà cho mẹ”, “đặc sản dễ ăn”, hoặc “món nào đang khuyến mãi”.`
-      : "Anh/chị hỏi rõ hơn một chút về nhu cầu hoặc người nhận quà, em sẽ tư vấn sát hơn nha.",
+    "Em có thể hỗ trợ tư vấn sản phẩm, giá bán, khuyến mãi, thông tin liên hệ và gợi ý quà tặng Đà Lạt. Hiện hệ thống AI đang dùng phản hồi dự phòng để đảm bảo anh/chị vẫn được hỗ trợ liên tục.",
   ].join("\n");
 }
 
@@ -487,11 +385,8 @@ QUY TẮC PHẢN HỒI:
 1. Trả lời thân thiện, lịch sự, xưng hô là "Dạ em chào anh/chị" hoặc "Dạ, Đà Lạt Souvenir xin nghe" và kết thúc câu chào/hỏi tự nhiên. Sử dụng biểu tượng cảm xúc (emoji) tinh tế.
 2. Dữ liệu sản phẩm và giá cả phải đúng tuyệt đối theo danh sách được cung cấp ở trên. Nếu khách hàng hỏi sản phẩm không có trong danh sách, hãy phản hồi khéo léo là hiện shop chưa kinh doanh sản phẩm này nhưng gợi ý sản phẩm thay thế tương đương.
 3. Khi khách hỏi về công dụng sức khỏe (ví dụ Atiso thanh nhiệt mát gan, hồng treo gió dẻo ngọt tự nhiên,...), hãy dựa vào mô tả và công dụng thực tế của sản phẩm để tư vấn chu đáo và chuyên nghiệp.
-4. Nếu khách hỏi câu rộng hoặc ngoài phạm vi mua hàng, vẫn trả lời tự nhiên theo hiểu biết chung, sau đó liên hệ nhẹ nhàng về nhu cầu chọn quà/sản phẩm nếu phù hợp. Không được trả lời cụt kiểu "em chỉ tư vấn sản phẩm".
-5. Nếu câu hỏi liên quan trẻ em, sức khỏe, bệnh lý, dị ứng, phụ nữ mang thai hoặc người lớn tuổi, chỉ tư vấn ở mức thông tin tham khảo, ưu tiên an toàn, nhắc khách kiểm tra thành phần và hỏi phụ huynh/bác sĩ khi cần. Không chẩn đoán bệnh và không khẳng định tác dụng chữa bệnh.
-6. Khi tư vấn quà, hãy hỏi hoặc suy luận theo người nhận, độ tuổi, ngân sách, dịp tặng và sở thích. Nếu thiếu thông tin, đưa 2-3 hướng chọn hợp lý thay vì từ chối.
-7. Trả lời ngắn gọn, súc tích, dễ hiểu. Sử dụng định dạng markdown (danh sách gạch đầu dòng, chữ đậm) để câu trả lời rõ ràng.
-8. KHÔNG tự bịa ra thông tin liên hệ hay giá cả khác ngoài các thông tin đã được cung cấp ở trên.`;
+4. Trả lời ngắn gọn, súc tích, dễ hiểu. Sử dụng định dạng markdown (danh sách gạch đầu dòng, chữ đậm) để câu trả lời rõ ràng.
+5. KHÔNG tự bịa ra thông tin liên hệ hay giá cả khác ngoài các thông tin đã được cung cấp ở trên.`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
