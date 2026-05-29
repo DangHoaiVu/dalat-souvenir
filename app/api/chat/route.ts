@@ -85,9 +85,10 @@ async function generateGeminiReply(
 
   for (const modelName of GEMINI_MODELS) {
     try {
+      // 1. Try standard string instruction (Gemini SDK v0.24.0+)
       const model = genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction,
+        systemInstruction: systemInstruction,
       });
       const chat = model.startChat({ history });
       const result = await chat.sendMessage(message);
@@ -95,7 +96,25 @@ async function generateGeminiReply(
       if (text) return text;
     } catch (error) {
       lastError = error;
-      console.error(`[API/Chat] Gemini model ${modelName} failed:`, error);
+      console.warn(`[API/Chat] Gemini model ${modelName} with string instruction failed, trying fallback:`, error);
+      
+      try {
+        // 2. Try content object shape instruction for older SDK configurations
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: {
+            role: "system",
+            parts: [{ text: systemInstruction }]
+          } as any
+        });
+        const chat = model.startChat({ history });
+        const result = await chat.sendMessage(message);
+        const text = result.response.text().trim();
+        if (text) return text;
+      } catch (innerError) {
+        lastError = innerError;
+        console.error(`[API/Chat] Gemini model ${modelName} failed completely:`, innerError);
+      }
     }
   }
 
@@ -192,6 +211,62 @@ function buildFallbackReply(
 ) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
 
+  // 1. Handle Greetings
+  if (/(chào|hello|hi|xin chào|chào em|chào bé|alo|helo|hey)/.test(lastMessage)) {
+    return [
+      "Dạ em chào anh/chị! Bé là trợ lý ảo của cửa hàng **Đà Lạt Souvenir** 🌸",
+      "",
+      "Bé rất sẵn lòng tư vấn cho anh/chị về các sản phẩm đặc sản Đà Lạt (như mứt dâu tây, hồng treo gió, trà atiso), nến thơm, đồ len handmade, các chương trình khuyến mãi cũng như cách đặt hàng và liên hệ shop.",
+      "",
+      "Hôm nay anh/chị cần bé hỗ trợ tìm sản phẩm nào ạ?"
+    ].join("\n");
+  }
+
+  // 2. Handle Budget Queries (e.g. "dưới 200 ngàn", "tầm 100k", "dưới 150.000")
+  const budgetMatch = lastMessage.match(/(dưới|khoảng|tầm|hơn|nhỏ hơn|thấp hơn|dưới)\s*(\d+[\d.,]*)\s*(k|ngàn|nghìn|triệu|đ|vnd)?/i);
+  if (budgetMatch) {
+    let limitPrice = toNumber(budgetMatch[2]);
+    const unit = budgetMatch[3]?.toLowerCase();
+    if (unit === "k" || unit === "ngàn" || unit === "nghìn") {
+      limitPrice = limitPrice * 1000;
+    } else if (limitPrice < 1000) {
+      // If user typed "dưới 200" without units, it means 200k
+      limitPrice = limitPrice * 1000;
+    }
+    
+    const matchingProducts = products
+      .filter((p) => getProductPrice(p) <= limitPrice)
+      .sort((a, b) => getProductPrice(a) - getProductPrice(b));
+
+    if (matchingProducts.length > 0) {
+      return [
+        `Dạ em tìm thấy các sản phẩm có giá dưới **${formatVnd(limitPrice)}** phù hợp với ngân sách của anh/chị:`,
+        "",
+        ...matchingProducts.slice(0, 6).map(formatProductLine),
+        "",
+        "Anh/chị xem có món nào ưng ý hông nha!"
+      ].join("\n");
+    } else {
+      return `Dạ hiện shop chưa có sản phẩm nào có giá dưới **${formatVnd(limitPrice)}** ạ. Các sản phẩm của shop dao động từ 25.000đ đến 350.000đ.`;
+    }
+  }
+
+  // 3. Handle specific product name queries (e.g. "mứt dâu", "khăn len")
+  const matchedProducts = products.filter(p => p.name && lastMessage.includes(p.name.toLowerCase()));
+  if (matchedProducts.length > 0) {
+    return [
+      "Dạ shop có sản phẩm này ạ! Thông tin chi tiết:",
+      "",
+      ...matchedProducts.map(p => {
+        const price = getProductPrice(p);
+        return `- **${p.name}**: Giá **${formatVnd(price)}** (${p.unit || "hộp"}). Mô tả: ${p.description || "Đặc sản thơm ngon chất lượng."}`;
+      }),
+      "",
+      "Anh/chị có muốn bé hướng dẫn đặt hàng sản phẩm này không ạ?"
+    ].join("\n");
+  }
+
+  // 4. Default categories of questions
   if (/(thanh toán|chuyển khoản|cod|nhận hàng|tiền mặt|payment)/.test(lastMessage)) {
     return [
       "Dạ shop hiện hỗ trợ 2 phương thức thanh toán:",
@@ -303,11 +378,9 @@ function buildFallbackReply(
   }
 
   return [
-    "Dạ em chào anh/chị! Em có thể giúp gì cho anh/chị hôm nay ạ?",
-    "Em là Trợ lý ảo của shop **Đà Lạt Souvenir**, sẵn sàng tư vấn về đặc sản Đà Lạt (mứt dâu tây, hồng treo gió, trà atiso), nến thơm decor, đồ len thủ công cũng như các chính sách đặt hàng, thanh toán và liên hệ ạ.",
-    products.length > 0
-      ? `\nHiện em có thông tin về **${products.length} sản phẩm** tại shop. Anh/chị cần bé tư vấn sản phẩm nào ạ?`
-      : "",
+    "Dạ bé chưa hiểu ý anh/chị lắm ạ 🐾",
+    "",
+    "Anh/chị có thể hỏi rõ hơn như: *đặc sản tốt cho sức khỏe*, *giá mứt dâu tây*, *sản phẩm dưới 200k* hoặc *thông tin liên hệ* của shop để bé hỗ trợ chính xác nhất nha!"
   ].join("\n");
 }
 
