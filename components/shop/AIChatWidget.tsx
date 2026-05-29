@@ -114,19 +114,20 @@ export default function AIChatWidget() {
         }),
       });
 
+      const data = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error("Không thể kết nối với server");
+        throw new Error(data?.error || "Không thể kết nối với server");
       }
 
-      const data = await response.json();
-      if (data.error) {
+      if (data?.error && !data?.reply) {
         throw new Error(data.error);
       }
 
       const assistantMsg: Message = {
         id: Math.random().toString(36).substring(7),
         role: "assistant",
-        content: data.reply,
+        content: data?.reply || "Dạ hiện tại em chưa có phản hồi phù hợp. Anh/chị vui lòng thử hỏi lại giúp em ạ.",
         timestamp: new Date(),
       };
 

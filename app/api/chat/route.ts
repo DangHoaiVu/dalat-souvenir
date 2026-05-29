@@ -40,10 +40,86 @@ function buildGeminiHistory(messages: ChatMessage[]) {
   return history;
 }
 
+function buildFallbackReply(messages: ChatMessage[]) {
+  const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
+
+  if (
+    lastMessage.includes("liên hệ") ||
+    lastMessage.includes("địa chỉ") ||
+    lastMessage.includes("ở đâu") ||
+    lastMessage.includes("sdt") ||
+    lastMessage.includes("điện thoại")
+  ) {
+    return [
+      "Dạ đây là thông tin liên hệ của Đà Lạt Souvenir:",
+      "",
+      "- Hotline: 0979.777.777",
+      "- Email: danghoaivu2004@gmail.com",
+      "- Địa chỉ: Thành phố Qui Nhơn, Bình Định",
+      "- Instagram: @lovehoaivulover",
+      "",
+      "Shop hỗ trợ tư vấn và giao hàng toàn quốc ạ.",
+    ].join("\n");
+  }
+
+  if (
+    lastMessage.includes("khuyến mãi") ||
+    lastMessage.includes("giảm giá") ||
+    lastMessage.includes("sale") ||
+    lastMessage.includes("ưu đãi") ||
+    lastMessage.includes("quà tặng")
+  ) {
+    return [
+      "Dạ hiện shop có khu vực ưu đãi/khuyến mãi được cập nhật trực tiếp trên website.",
+      "",
+      "- Các chương trình đang bật sẽ hiện trong popup khuyến mãi.",
+      "- Sản phẩm được áp dụng ưu đãi sẽ hiển thị giá khuyến mãi ngay trên thẻ sản phẩm.",
+      "- Anh/chị có thể bấm vào mục Bộ quà tặng hoặc xem danh sách sản phẩm để chọn món phù hợp.",
+      "",
+      "Nếu cần kiểm tra nhanh chương trình đang chạy, anh/chị có thể liên hệ hotline 0979.777.777 ạ.",
+    ].join("\n");
+  }
+
+  if (
+    lastMessage.includes("sức khỏe") ||
+    lastMessage.includes("tốt cho") ||
+    lastMessage.includes("atiso") ||
+    lastMessage.includes("trà")
+  ) {
+    return [
+      "Dạ với nhóm sản phẩm tốt cho sức khỏe, anh/chị có thể tham khảo:",
+      "",
+      "- Trà atiso túi lọc: phù hợp làm quà, hỗ trợ thanh nhiệt và dễ sử dụng hằng ngày.",
+      "- Hồng treo gió: vị ngọt tự nhiên, phù hợp làm quà đặc sản Đà Lạt.",
+      "- Dâu tằm sấy dẻo: món ăn nhẹ dễ dùng, phù hợp làm quà cho bạn bè và gia đình.",
+    ].join("\n");
+  }
+
+  if (
+    lastMessage.includes("giá") ||
+    lastMessage.includes("bao nhiêu") ||
+    lastMessage.includes("sản phẩm")
+  ) {
+    return [
+      "Dạ anh/chị có thể xem giá mới nhất tại trang Sản phẩm của website.",
+      "",
+      "Một số nhóm sản phẩm nổi bật gồm đặc sản Đà Lạt, đồ len/phụ kiện, đồ lưu niệm handmade, nến thơm và bộ quà tặng. Giá có thể thay đổi theo chương trình ưu đãi đang bật.",
+    ].join("\n");
+  }
+
+  return [
+    "Dạ em chào anh/chị! Em là trợ lý ảo của Đà Lạt Souvenir.",
+    "",
+    "Em có thể hỗ trợ tư vấn sản phẩm, giá bán, khuyến mãi, thông tin liên hệ và gợi ý quà tặng Đà Lạt. Hiện hệ thống AI đang dùng phản hồi dự phòng để đảm bảo anh/chị vẫn được hỗ trợ liên tục.",
+  ].join("\n");
+}
+
 export async function POST(req: Request) {
+  let messages: ChatMessage[] = [];
+
   try {
     const body = await req.json();
-    const messages = Array.isArray(body?.messages) ? body.messages.filter(isChatMessage) : [];
+    messages = Array.isArray(body?.messages) ? body.messages.filter(isChatMessage) : [];
 
     if (messages.length === 0) {
       return NextResponse.json({ error: "Thiếu nội dung câu hỏi." }, { status: 400 });
@@ -154,6 +230,9 @@ QUY TẮC PHẢN HỒI:
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
     console.error("[API/Chat] Error:", error);
-    return NextResponse.json({ error: "Có lỗi xảy ra khi xử lý phản hồi từ AI." }, { status: 500 });
+    return NextResponse.json({
+      reply: buildFallbackReply(messages),
+      fallback: true,
+    });
   }
 }
