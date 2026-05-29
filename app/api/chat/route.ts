@@ -478,9 +478,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
     console.error("[API/Chat] Error calling GoogleGenAI, using fallback responder:", error);
-    const errMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json({
-      reply: `*(Lỗi kết nối Gemini API thật: ${errMessage})*\n\n` + buildFallbackReply(messages, products, promotions),
+      reply: buildFallbackReply(messages, products, promotions),
       fallback: true,
     });
   }
