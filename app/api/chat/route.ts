@@ -7,6 +7,28 @@ type ChatMessage = {
   content: string;
 };
 
+type ChatProduct = {
+  product_id?: string | null;
+  name: string | null;
+  price: number | string | null;
+  promoted_price?: number | string | null;
+  stock?: number | null;
+  unit?: string | null;
+  description?: string | null;
+  category_id?: string | null;
+};
+
+type ChatPromotion = {
+  promotion_id?: string | null;
+  name: string | null;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  fixed_price?: number | string | null;
+};
+
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
@@ -40,119 +62,308 @@ function buildGeminiHistory(messages: ChatMessage[]) {
   return history;
 }
 
-function buildFallbackReply(messages: ChatMessage[]) {
+function getGeminiApiKey() {
+  return (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    ""
+  ).trim();
+}
+
+async function generateGeminiReply(
+  apiKey: string,
+  systemInstruction: string,
+  history: ReturnType<typeof buildGeminiHistory>,
+  message: string,
+) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  let lastError: unknown;
+
+  for (const modelName of GEMINI_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction,
+      });
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(message);
+      const text = result.response.text().trim();
+      if (text) return text;
+    } catch (error) {
+      lastError = error;
+      console.error(`[API/Chat] Gemini model ${modelName} failed:`, error);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Gemini returned no response");
+}
+
+function toNumber(value: number | string | null | undefined) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function formatVnd(value: number) {
+  return `${new Intl.NumberFormat("vi-VN").format(Math.round(value))}đ`;
+}
+
+function getProductPrice(product: ChatProduct) {
+  const promotedPrice = toNumber(product.promoted_price);
+  return promotedPrice > 0 ? promotedPrice : toNumber(product.price);
+}
+
+function formatProductLine(product: ChatProduct) {
+  const price = getProductPrice(product);
+  const unitText = product.unit ? `/${product.unit}` : "";
+  const stockText = typeof product.stock === "number" ? `, còn ${product.stock} sản phẩm` : "";
+  return `- **${product.name || "Sản phẩm"}**: **${formatVnd(price)}${unitText}**${stockText}`;
+}
+
+function productText(product: ChatProduct) {
+  return `${product.name || ""} ${product.description || ""}`.toLowerCase();
+}
+
+function pickProducts(products: ChatProduct[], keywords: string[], limit = 5) {
+  return products
+    .filter((product) => keywords.some((keyword) => productText(product).includes(keyword)))
+    .sort((a, b) => getProductPrice(a) - getProductPrice(b))
+    .slice(0, limit);
+}
+
+function formatProductSuggestions(products: ChatProduct[]) {
+  if (products.length === 0) return "";
+  return ["", "Một vài sản phẩm phù hợp trong shop:", ...products.map(formatProductLine)].join("\n");
+}
+
+function buildFallbackReply(
+  messages: ChatMessage[],
+  products: ChatProduct[] = [],
+  promotions: ChatPromotion[] = [],
+) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
 
-  if (
-    lastMessage.includes("thanh toán") ||
-    lastMessage.includes("chuyển khoản") ||
-    lastMessage.includes("cod") ||
-    lastMessage.includes("nhận hàng") ||
-    lastMessage.includes("tiền mặt")
-  ) {
+  if (/(thanh toán|chuyển khoản|cod|nhận hàng|tiền mặt|payment)/.test(lastMessage)) {
     return [
       "Dạ shop hiện hỗ trợ 2 phương thức thanh toán:",
       "",
-      "- Thanh toán khi nhận hàng (COD): anh/chị trả tiền mặt khi shipper giao hàng.",
-      "- Chuyển khoản ngân hàng: shop sẽ xác nhận thông tin đơn và liên hệ lại để hướng dẫn chuyển khoản.",
+      "- **Thanh toán khi nhận hàng (COD):** anh/chị trả tiền mặt khi shipper giao hàng.",
+      "- **Chuyển khoản ngân hàng:** shop sẽ xác nhận thông tin đơn và liên hệ lại để hướng dẫn chuyển khoản.",
       "",
       "Anh/chị có thể chọn phương thức phù hợp ở bước xác nhận đặt hàng ạ.",
     ].join("\n");
   }
 
-  if (
-    lastMessage.includes("liên hệ") ||
-    lastMessage.includes("địa chỉ") ||
-    lastMessage.includes("ở đâu") ||
-    lastMessage.includes("sdt") ||
-    lastMessage.includes("điện thoại")
-  ) {
+  if (/(liên hệ|địa chỉ|ở đâu|sdt|số điện thoại|điện thoại|hotline|instagram|email)/.test(lastMessage)) {
     return [
-      "Dạ đây là thông tin liên hệ của Đà Lạt Souvenir:",
+      "Dạ đây là thông tin liên hệ của **Đà Lạt Souvenir**:",
       "",
-      "- Hotline: 0979.777.777",
-      "- Email: danghoaivu2004@gmail.com",
-      "- Địa chỉ: Thành phố Qui Nhơn, Bình Định",
-      "- Instagram: @lovehoaivulover",
-      "",
-      "Shop hỗ trợ tư vấn và giao hàng toàn quốc ạ.",
+      "- Hotline: **0979.777.777**",
+      "- Email: **danghoaivu2004@gmail.com**",
+      "- Địa chỉ: **Thành phố Qui Nhơn, Bình Định**",
+      "- Instagram: **@lovehoaivulover**",
+      "- Giờ hỗ trợ: **8:00 - 22:00 mỗi ngày**",
     ].join("\n");
   }
 
-  if (
-    lastMessage.includes("khuyến mãi") ||
-    lastMessage.includes("giảm giá") ||
-    lastMessage.includes("sale") ||
-    lastMessage.includes("ưu đãi") ||
-    lastMessage.includes("quà tặng")
-  ) {
+  if (/(khuyến mãi|giảm giá|sale|ưu đãi|voucher|mã giảm|quà tặng)/.test(lastMessage)) {
+    const activePromotions = promotions.filter((promotion) => promotion.name);
     return [
-      "Dạ hiện shop có khu vực ưu đãi/khuyến mãi được cập nhật trực tiếp trên website.",
+      "Dạ các ưu đãi sẽ được cập nhật trực tiếp trên website và popup khuyến mãi.",
+      activePromotions.length > 0
+        ? [
+            "",
+            "Chương trình đang bật:",
+            ...activePromotions.slice(0, 4).map((promotion) => {
+              const price = toNumber(promotion.fixed_price);
+              const priceText = price > 0 ? `, đồng giá ${formatVnd(price)}` : "";
+              return `- **${promotion.name}**${priceText}`;
+            }),
+          ].join("\n")
+        : "",
       "",
-      "- Các chương trình đang bật sẽ hiện trong popup khuyến mãi.",
-      "- Sản phẩm được áp dụng ưu đãi sẽ hiển thị giá khuyến mãi ngay trên thẻ sản phẩm.",
-      "- Anh/chị có thể bấm vào mục Bộ quà tặng hoặc xem danh sách sản phẩm để chọn món phù hợp.",
-      "",
-      "Nếu cần kiểm tra nhanh chương trình đang chạy, anh/chị có thể liên hệ hotline 0979.777.777 ạ.",
-    ].join("\n");
+      "Anh/chị có thể xem mục **Bộ quà tặng** hoặc trang **Sản phẩm** để chọn món đang có ưu đãi ạ.",
+    ].filter(Boolean).join("\n");
   }
 
-  if (
-    lastMessage.includes("sức khỏe") ||
-    lastMessage.includes("tốt cho") ||
-    lastMessage.includes("atiso") ||
-    lastMessage.includes("trà")
-  ) {
+  if (/(ăn được|uống được|đồ ăn|đồ uống|ngon|sức khỏe|healthy|tốt cho|atiso|trà|đặc sản)/.test(lastMessage)) {
+    const foodProducts = pickProducts(products, [
+      "trà",
+      "tra",
+      "atiso",
+      "hồng",
+      "hong",
+      "mứt",
+      "mut",
+      "dâu",
+      "dau",
+      "bánh",
+      "banh",
+      "kẹo",
+      "keo",
+      "sấy",
+      "say",
+      "cà phê",
+      "ca phe",
+      "đặc sản",
+      "dac san",
+    ], 6);
+
     return [
-      "Dạ với nhóm sản phẩm tốt cho sức khỏe, anh/chị có thể tham khảo:",
+      "Dạ có ạ. Nếu anh/chị muốn món **ăn/uống được, ngon và tương đối lành**, em gợi ý ưu tiên nhóm đặc sản Đà Lạt.",
       "",
-      "- Trà atiso túi lọc: phù hợp làm quà, hỗ trợ thanh nhiệt và dễ sử dụng hằng ngày.",
-      "- Hồng treo gió: vị ngọt tự nhiên, phù hợp làm quà đặc sản Đà Lạt.",
-      "- Dâu tằm sấy dẻo: món ăn nhẹ dễ dùng, phù hợp làm quà cho bạn bè và gia đình.",
-    ].join("\n");
+      "**Nên chọn:** trà atiso, hồng treo gió, mứt/dâu sấy, bánh hoặc set đặc sản đóng gói. Các món này dễ dùng, dễ làm quà và hợp với nhiều độ tuổi.",
+      "**Lưu ý:** đây là tư vấn tham khảo, không phải lời khuyên y tế. Nếu mua cho trẻ nhỏ, người dị ứng, tiểu đường hoặc có bệnh nền thì nên kiểm tra thành phần trước khi dùng.",
+      formatProductSuggestions(foodProducts),
+    ].filter(Boolean).join("\n");
   }
 
-  if (
-    lastMessage.includes("giá") ||
-    lastMessage.includes("bao nhiêu") ||
-    lastMessage.includes("sản phẩm")
-  ) {
+  if (/(trẻ em|tre em|em bé|em be|bé|be|5 tuổi|trẻ nhỏ|con nít)/.test(lastMessage)) {
+    const childSafeProducts = pickProducts(products, [
+      "sticker",
+      "sổ",
+      "so tay",
+      "móc khóa",
+      "moc khoa",
+      "gấu",
+      "gau",
+      "túi",
+      "tui",
+      "nón",
+      "non",
+      "khăn",
+      "khan",
+      "len",
+    ], 5);
+
     return [
-      "Dạ anh/chị có thể xem giá mới nhất tại trang Sản phẩm của website.",
+      "Dạ với trẻ nhỏ, mình nên ưu tiên món **an toàn, nhẹ, dễ dùng và không có chi tiết nhỏ dễ nuốt**.",
       "",
-      "Một số nhóm sản phẩm nổi bật gồm đặc sản Đà Lạt, đồ len/phụ kiện, đồ lưu niệm handmade, nến thơm và bộ quà tặng. Giá có thể thay đổi theo chương trình ưu đãi đang bật.",
-    ].join("\n");
+      "Phù hợp hơn: sticker, sổ tay, móc khóa bản lớn, túi tote nhỏ, nón/khăn len hoặc đồ lưu niệm mềm.",
+      "Nếu chọn đặc sản ăn được thì nên dùng lượng nhỏ và có phụ huynh kiểm tra thành phần.",
+      formatProductSuggestions(childSafeProducts),
+    ].filter(Boolean).join("\n");
   }
 
-  if (
-    lastMessage.includes("đặt hàng") ||
-    lastMessage.includes("đơn hàng") ||
-    lastMessage.includes("giỏ hàng") ||
-    lastMessage.includes("hủy đơn") ||
-    lastMessage.includes("lịch sử")
-  ) {
+  if (/(giá|bao nhiêu|sản phẩm|món nào|mua gì|gợi ý|tư vấn|quà cho)/.test(lastMessage)) {
+    const availableProducts = products
+      .filter((product) => product.name && getProductPrice(product) > 0)
+      .sort((a, b) => getProductPrice(a) - getProductPrice(b));
+
     return [
-      "Dạ anh/chị có thể mua hàng theo quy trình sau:",
+      "Dạ em gợi ý theo dữ liệu sản phẩm hiện có trong shop ạ.",
+      availableProducts.length > 0
+        ? [
+            "",
+            "Một vài sản phẩm dễ chọn:",
+            ...availableProducts.slice(0, 6).map(formatProductLine),
+          ].join("\n")
+        : "",
       "",
-      "1. Vào trang Sản phẩm và chọn món muốn mua.",
+      "Nếu anh/chị nói rõ ngân sách, người nhận quà hoặc dịp tặng, em sẽ lọc gợi ý sát hơn nha.",
+    ].filter(Boolean).join("\n");
+  }
+
+  if (/(đặt hàng|đơn hàng|giỏ hàng|hủy đơn|lịch sử|giao hàng|ship)/.test(lastMessage)) {
+    return [
+      "Dạ quy trình mua hàng trên website như sau:",
+      "",
+      "1. Vào trang **Sản phẩm** và chọn món muốn mua.",
       "2. Thêm sản phẩm vào giỏ hàng.",
-      "3. Mở giỏ hàng, kiểm tra sản phẩm và bấm xác nhận đặt hàng.",
-      "4. Điền thông tin giao hàng và chọn thanh toán COD hoặc chuyển khoản.",
-      "5. Sau khi đặt thành công, anh/chị có thể xem đơn trong mục Tài khoản > Đơn hàng.",
+      "3. Kiểm tra giỏ hàng và xác nhận đặt hàng.",
+      "4. Điền thông tin giao hàng, chọn **COD** hoặc **chuyển khoản**.",
+      "5. Sau khi đặt thành công, xem đơn tại **Tài khoản > Đơn hàng**.",
       "",
-      "Với đơn chưa xử lý/giao, anh/chị có thể cập nhật thông tin hoặc hủy đơn trong trang đơn hàng của mình ạ.",
+      "Với đơn còn ở trạng thái cho phép, anh/chị có thể cập nhật thông tin hoặc hủy đơn trực tiếp trong trang đơn hàng.",
     ].join("\n");
   }
 
   return [
-    "Dạ em chào anh/chị! Em là trợ lý ảo của Đà Lạt Souvenir.",
+    "Dạ em hiểu câu hỏi của anh/chị ạ.",
     "",
-    "Em có thể hỗ trợ tư vấn sản phẩm, giá bán, khuyến mãi, thông tin liên hệ và gợi ý quà tặng Đà Lạt. Hiện hệ thống AI đang dùng phản hồi dự phòng để đảm bảo anh/chị vẫn được hỗ trợ liên tục.",
+    "Nếu câu hỏi liên quan đến shop, em có thể tư vấn sản phẩm, giá, khuyến mãi, thanh toán, giao hàng và đơn hàng. Nếu là câu hỏi phổ thông, em cũng sẽ cố gắng trả lời ngắn gọn, dễ hiểu như một trợ lý AI.",
+    "",
+    products.length > 0
+      ? `Hiện shop đang có **${products.length} sản phẩm** để em dựa vào tư vấn. Anh/chị có thể hỏi cụ thể như: “món ăn được tốt cho sức khỏe”, “quà dưới 100k”, “quà cho bé”, hoặc “đang có khuyến mãi gì”.`
+      : "Anh/chị hỏi rõ hơn một chút, em sẽ hỗ trợ sát nhu cầu hơn nha.",
   ].join("\n");
+}
+
+function buildProductsContext(products: ChatProduct[], categoryMap: Map<string, string>) {
+  return products.map((product) => {
+    const categoryName = product.category_id ? categoryMap.get(product.category_id) || "Khác" : "Khác";
+    const promotedPrice = toNumber(product.promoted_price);
+    const priceText = promotedPrice > 0
+      ? `${formatVnd(promotedPrice)} (giá gốc ${formatVnd(toNumber(product.price))}, đang ưu đãi)`
+      : formatVnd(toNumber(product.price));
+    return [
+      `- Tên: ${product.name}`,
+      `  Danh mục: ${categoryName}`,
+      `  Giá: ${priceText}`,
+      `  Đơn vị: ${product.unit || "Cái/Hộp"}`,
+      `  Tồn kho: ${typeof product.stock === "number" ? product.stock : "chưa rõ"}`,
+      `  Mô tả: ${product.description || "Chưa có mô tả chi tiết."}`,
+    ].join("\n");
+  }).join("\n\n");
+}
+
+function buildPromotionsContext(promotions: ChatPromotion[]) {
+  return promotions.map((promotion) => {
+    const fixedPrice = toNumber(promotion.fixed_price);
+    return [
+      `- Chương trình: ${promotion.name}`,
+      `  Mô tả: ${promotion.description || "Không có mô tả chi tiết."}`,
+      fixedPrice > 0 ? `  Đồng giá: ${formatVnd(fixedPrice)}` : null,
+      `  Thời gian: ${promotion.start_date ? new Date(promotion.start_date).toLocaleDateString("vi-VN") : "chưa rõ"} đến ${promotion.end_date ? new Date(promotion.end_date).toLocaleDateString("vi-VN") : "chưa rõ"}`,
+    ].filter(Boolean).join("\n");
+  }).join("\n\n");
+}
+
+function buildSystemInstruction(productsContext: string, promotionsContext: string) {
+  return `Bạn là trợ lý AI thông minh, tự nhiên và thân thiện của cửa hàng "Đà Lạt Souvenir" (hoạt động 24/7).
+Bạn có thể trả lời câu hỏi phổ thông như một trợ lý Gemini, đồng thời ưu tiên dùng dữ liệu thật của shop khi câu hỏi liên quan đến sản phẩm, giá, khuyến mãi, thanh toán, giao hàng, tài khoản hoặc đơn hàng.
+Không được lặp một câu trả lời chung cho mọi câu hỏi. Luôn đọc đúng ý câu hỏi mới nhất của khách.
+
+THÔNG TIN CỬA HÀNG:
+- Địa chỉ: Thành phố Qui Nhơn, Bình Định. Shop bán đặc sản/quà lưu niệm Đà Lạt tuyển chọn.
+- Hotline: 0979.777.777
+- Email: danghoaivu2004@gmail.com
+- Instagram: @lovehoaivulover
+- Giờ hỗ trợ: 8:00 - 22:00 mỗi ngày.
+- Phương thức thanh toán: COD và chuyển khoản ngân hàng.
+- Giao hàng: hỗ trợ giao toàn quốc.
+
+CHỨC NĂNG WEBSITE:
+- Xem sản phẩm, chi tiết sản phẩm, câu chuyện thương hiệu, bộ quà tặng và giỏ hàng.
+- Đăng nhập bằng Google hoặc email/password.
+- Đặt hàng, xem lịch sử đơn hàng, cập nhật thông tin giao hàng hoặc hủy đơn khi trạng thái cho phép.
+- Admin quản lý sản phẩm, đơn hàng, khuyến mãi, ảnh sản phẩm và mô tả bằng AI.
+- Chatbot chỉ tư vấn; thao tác đặt/hủy đơn vẫn cần thực hiện trên giao diện website.
+
+DANH SÁCH SẢN PHẨM ĐANG KINH DOANH:
+${productsContext || "Hiện chưa lấy được dữ liệu sản phẩm."}
+
+CHƯƠNG TRÌNH KHUYẾN MÃI ĐANG CHẠY:
+${promotionsContext || "Hiện không có chương trình khuyến mãi đang bật."}
+
+QUY TẮC TRẢ LỜI:
+1. Trả lời bằng tiếng Việt, thân thiện, tự nhiên, dễ hiểu, xưng hô anh/chị.
+2. Với câu hỏi về shop/sản phẩm/giá/khuyến mãi, chỉ dùng dữ liệu đã cung cấp, không bịa giá hoặc sản phẩm.
+3. Với câu hỏi ngoài phạm vi shop, vẫn trả lời như trợ lý AI phổ thông; nếu phù hợp thì liên hệ nhẹ về nhu cầu chọn quà/sản phẩm.
+4. Với sức khỏe, trẻ em, dị ứng, bệnh lý, phụ nữ mang thai hoặc người lớn tuổi: chỉ tư vấn tham khảo, không chẩn đoán bệnh, không khẳng định chữa bệnh.
+5. Nếu khách hỏi "shop có sản phẩm gì ăn được, ngon, tốt cho sức khỏe không", phải tư vấn nhóm đặc sản ăn/uống được như trà atiso, hồng treo gió, mứt/dâu sấy, bánh hoặc set đặc sản.
+6. Trả lời súc tích nhưng đủ ý. Dùng markdown gọn gàng: gạch đầu dòng, chữ đậm, đoạn ngắn.`;
 }
 
 export async function POST(req: Request) {
   let messages: ChatMessage[] = [];
+  let products: ChatProduct[] = [];
+  let promotions: ChatPromotion[] = [];
 
   try {
     const body = await req.json();
@@ -162,123 +373,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Thiếu nội dung câu hỏi." }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const supabase = createAdminSupabaseClient();
+
+    const [categoriesResult, productsResult, promotionsResult] = await Promise.all([
+      supabase.from("categories").select("category_id, name"),
+      supabase
+        .from("products")
+        .select("product_id, name, price, promoted_price, stock, unit, description, category_id")
+        .eq("is_for_sale", true),
+      supabase
+        .from("promotions")
+        .select("promotion_id, name, description, start_date, end_date, fixed_price")
+        .eq("is_active", true),
+    ]);
+
+    const categories = categoriesResult.data || [];
+    products = productsResult.data || [];
+    promotions = promotionsResult.data || [];
+
+    const apiKey = getGeminiApiKey();
     const isMockMode = !apiKey || apiKey.includes("your_gemini_api_key");
 
     if (isMockMode) {
-      // Return a simulated, smart mock response based on user input
-      const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
-      let reply = "Dạ em chào anh/chị! Em là trợ lý ảo Đà Lạt Souvenir. (Hiện tại API Key của Gemini đang chạy ở chế độ thử nghiệm/offline nên em sẽ phản hồi bằng dữ liệu giả lập nhé ạ!)\n\n";
-
-      if (lastMessage.includes("liên hệ") || lastMessage.includes("địa chỉ") || lastMessage.includes("ở đâu") || lastMessage.includes("sđt") || lastMessage.includes("điện thoại")) {
-        reply += "📍 **Thông tin liên hệ của Shop:**\n- **Địa chỉ:** Thành phố Qui Nhơn, Bình Định (Shop chuyên đặc sản Đà Lạt tuyển chọn).\n- **Hotline:** 0979.777.777\n- **Email:** danghoaivu2004@gmail.com\n- **Instagram:** @lovehoaivulover\n- **Giờ mở cửa:** 8:00 - 22:00 hàng ngày.";
-      } else if (lastMessage.includes("sức khỏe") || lastMessage.includes("tốt cho") || lastMessage.includes("atiso") || lastMessage.includes("atixô") || lastMessage.includes("trà")) {
-        reply += "🍵 **Sản phẩm tốt cho sức khỏe tiêu biểu:**\n- **Trà atiso túi lọc:** Hỗ trợ thanh nhiệt, mát gan, giải độc cơ thể cực tốt. Rất thích hợp làm quà biếu.\n- **Hồng treo gió:** Sấy treo tự nhiên, vị ngọt dẻo lành mạnh, không đường hóa học.\n- **Dâu tằm sấy dẻo:** Nhiều vitamin, giúp đẹp da và hỗ trợ tiêu hóa.";
-      } else if (lastMessage.includes("khuyến mãi") || lastMessage.includes("giảm giá") || lastMessage.includes("sale") || lastMessage.includes("quà tặng")) {
-        reply += "🎁 **Chương trình ưu đãi hiện có:**\n- **Miễn phí vận chuyển:** Cho tất cả các đơn hàng từ **500k** trở lên trên phạm vi toàn quốc.\n- **Combo quà tặng:** Có Set lưu niệm mix nhiều món (mứt, trà, sổ tay) với giá cực kỳ tiết kiệm để làm quà.";
-      } else if (lastMessage.includes("mứt") || lastMessage.includes("dâu tây") || lastMessage.includes("giá") || lastMessage.includes("bao nhiêu")) {
-        reply += "🍓 **Thông tin giá cả sản phẩm nổi bật:**\n- **Mứt dâu tây Đà Lạt:** 120.000 VND / Hộp 500g.\n- **Hồng treo gió:** 315.000 VND / Hộp 500g.\n- **Khăn len handmade:** 150.000 VND / Cái.\n- **Nến thơm lavender/thông rừng:** 140.000 - 150.000 VND / Hũ.";
-      } else {
-        reply += "Dạ, Đà Lạt Souvenir chuyên cung cấp các sản phẩm đặc sản Đà Lạt (Mứt dâu tây, hồng treo gió, trà atiso), nến thơm decor, đồ len handmade xinh xắn.\n\nAnh/chị cần em hỗ trợ xem giá sản phẩm nào, tư vấn quà tặng tốt cho sức khỏe hay cần thông tin liên lạc giao hàng ạ?";
-      }
-
-      // Simulate network delay for realistic typing indicator
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return NextResponse.json({ reply });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return NextResponse.json({
+        reply: buildFallbackReply(messages, products, promotions),
+        fallback: true,
+      });
     }
 
-    // 1. Fetch products & promotions to build the AI's context
-    const supabase = createAdminSupabaseClient();
-
-    // Fetch categories first
-    const { data: categories } = await supabase
-      .from("categories")
-      .select("category_id, name");
-
-    // Fetch active/saleable products
-    const { data: products } = await supabase
-      .from("products")
-      .select("product_id, name, price, promoted_price, stock, unit, description, category_id")
-      .eq("is_for_sale", true);
-
-    // Fetch active promotions
-    const { data: promotions } = await supabase
-      .from("promotions")
-      .select("promotion_id, name, description, start_date, end_date, fixed_price")
-      .eq("is_active", true);
-
-    // Format products context
-    const categoryMap = new Map(categories?.map(c => [c.category_id, c.name]) || []);
-    const productsContext = (products || []).map(p => {
-      const catName = categoryMap.get(p.category_id) || "Khác";
-      const priceText = p.promoted_price ? `${p.promoted_price} VND (Giá gốc: ${p.price} VND, đang khuyến mãi)` : `${p.price} VND`;
-      return `- Tên: ${p.name}\n  Danh mục: ${catName}\n  Giá: ${priceText}\n  Đơn vị: ${p.unit || "Cái/Hộp"}\n  Còn lại: ${p.stock} sản phẩm trong kho\n  Mô tả: ${p.description || "Chưa có mô tả chi tiết."}`;
-    }).join("\n\n");
-
-    // Format promotions context
-    const promotionsContext = (promotions || []).map(promo => {
-      return `- Chương trình: ${promo.name}\n  Mô tả: ${promo.description || "Không có mô tả chi tiết."}\n  Thời gian: ${promo.start_date ? new Date(promo.start_date).toLocaleDateString("vi-VN") : ""} đến ${promo.end_date ? new Date(promo.end_date).toLocaleDateString("vi-VN") : ""}`;
-    }).join("\n");
-
-    const systemInstruction = `Bạn là Trợ lý ảo AI thông minh và thân thiện của cửa hàng "Đà Lạt Souvenir" (hoạt động 24/7).
-Nhiệm vụ của bạn là tư vấn cho khách hàng về các sản phẩm lưu niệm, đặc sản Đà Lạt, các chương trình khuyến mãi, giá cả, và các thông tin liên quan đến shop.
-
-THÔNG TIN CỬA HÀNG "ĐÀ LẠT SOUVENIR":
-- Địa chỉ: Thành phố Qui Nhơn, Bình Định (Lưu ý: Shop bán đặc sản Đà Lạt tuyển chọn chất lượng cao nhưng có trụ sở tại Quy Nhơn).
-- Điện thoại/Hotline: 0979.777.777
-- Email: danghoaivu2004@gmail.com
-- Instagram: @lovehoaivulover (https://www.instagram.com/lovehoaivulover/)
-- Giờ mở cửa: 8:00 - 22:00 mỗi ngày.
-- Chủ cửa hàng: Đặng Hoài Vũ.
-- Phí giao hàng: Miễn phí cho đơn hàng từ 500k trở lên. Giao hàng toàn quốc nhanh chóng từ 2-4 ngày.
-- Phương thức thanh toán: Hỗ trợ thanh toán khi nhận hàng (COD) và chuyển khoản ngân hàng. Với COD, khách thanh toán bằng tiền mặt khi nhận hàng. Với chuyển khoản, shop sẽ liên hệ xác nhận và hướng dẫn thông tin chuyển khoản.
-
-CHỨC NĂNG WEBSITE:
-- Khách hàng có thể xem trang chủ, trang sản phẩm, trang chi tiết sản phẩm, câu chuyện thương hiệu, giỏ hàng và bộ quà tặng.
-- Người dùng có thể đăng nhập bằng Google hoặc email/password.
-- Người dùng có thể thêm sản phẩm vào giỏ hàng, đặt hàng, chọn thanh toán khi nhận hàng hoặc chuyển khoản ngân hàng, xem lịch sử đơn hàng trong mục Tài khoản > Đơn hàng.
-- Người dùng có thể cập nhật thông tin giao hàng hoặc hủy đơn khi đơn hàng còn ở trạng thái cho phép.
-- Admin có thể xem website như người dùng thường và có thêm Admin Panel để quản lý sản phẩm, đơn hàng, khuyến mãi, ảnh sản phẩm và mô tả bằng AI.
-- Chương trình khuyến mãi có thể được bật/tắt. Khi đang hoạt động, website có thể hiển thị popup ưu đãi và áp dụng giá ưu đãi cho các sản phẩm được chọn.
-- Chatbot chỉ hỗ trợ tư vấn; các thao tác đặt hàng, hủy đơn, chỉnh thông tin đơn hoặc thanh toán vẫn cần người dùng thực hiện trực tiếp trên giao diện website.
-
-DANH SÁCH SẢN PHẨM ĐANG KINH DOANH:
-${productsContext || "Hiện tại không có sản phẩm nào trực tuyến."}
-
-DANH SÁCH CHƯƠNG TRÌNH KHUYẾN MÃI ĐANG CHẠY:
-${promotionsContext || "Hiện không có chương trình khuyến mãi lớn nào đang diễn ra."}
-
-QUY TẮC PHẢN HỒI:
-1. Trả lời thân thiện, lịch sự, xưng hô là "Dạ em chào anh/chị" hoặc "Dạ, Đà Lạt Souvenir xin nghe" và kết thúc câu chào/hỏi tự nhiên. Sử dụng biểu tượng cảm xúc (emoji) tinh tế.
-2. Dữ liệu sản phẩm và giá cả phải đúng tuyệt đối theo danh sách được cung cấp ở trên. Nếu khách hàng hỏi sản phẩm không có trong danh sách, hãy phản hồi khéo léo là hiện shop chưa kinh doanh sản phẩm này nhưng gợi ý sản phẩm thay thế tương đương.
-3. Khi khách hỏi về công dụng sức khỏe (ví dụ Atiso thanh nhiệt mát gan, hồng treo gió dẻo ngọt tự nhiên,...), hãy dựa vào mô tả và công dụng thực tế của sản phẩm để tư vấn chu đáo và chuyên nghiệp.
-4. Trả lời ngắn gọn, súc tích, dễ hiểu. Sử dụng định dạng markdown (danh sách gạch đầu dòng, chữ đậm) để câu trả lời rõ ràng.
-5. KHÔNG tự bịa ra thông tin liên hệ hay giá cả khác ngoài các thông tin đã được cung cấp ở trên.`;
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: systemInstruction,
-    });
-
-    // Format history for Google AI SDK
-    // The SDK expects history like: [{ role: 'user' | 'model', parts: [{ text: '...' }] }]
+    const categoryMap = new Map(categories.map((category) => [category.category_id, category.name]));
+    const systemInstruction = buildSystemInstruction(
+      buildProductsContext(products, categoryMap),
+      buildPromotionsContext(promotions),
+    );
     const formattedHistory = buildGeminiHistory(messages.slice(0, -1));
-
     const lastMessage = messages[messages.length - 1]?.content || "";
-
-    const chat = model.startChat({
-      history: formattedHistory,
-    });
-
-    const result = await chat.sendMessage(lastMessage);
-    const text = result.response.text().trim();
+    const text = await generateGeminiReply(apiKey, systemInstruction, formattedHistory, lastMessage);
 
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
     console.error("[API/Chat] Error:", error);
     return NextResponse.json({
-      reply: buildFallbackReply(messages),
+      reply: buildFallbackReply(messages, products, promotions),
       fallback: true,
     });
   }
