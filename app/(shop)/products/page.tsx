@@ -200,44 +200,45 @@ function ProductsPageContent() {
 
   return (
     <div className="mx-auto max-w-[1680px] px-3 py-7 sm:px-6 sm:py-10 lg:px-10 2xl:px-12">
-      <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Cửa hàng</p>
-          <h1 className="mt-2 text-3xl font-bold text-primary sm:text-4xl">Sản phẩm</h1>
-          <p className="mt-2 text-sm font-medium text-secondary">
-            Hiển thị {filteredProducts.length} sản phẩm
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:block">
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortValue)}>
-              <SelectTrigger className="w-[210px] border-[--color-border] bg-surface font-medium shadow-sm">
-                <SelectValue>{SORT_LABELS[sortBy]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent className="border-[--color-border] bg-surface">
-                {Object.entries(SORT_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="sticky top-16 z-30 -mx-3 mb-6 border-b border-[--color-border] bg-[var(--color-bg)] px-3 py-4 shadow-sm sm:-mx-6 sm:mb-8 sm:px-6 lg:-mx-10 lg:top-20 lg:px-10 2xl:-mx-12 2xl:px-12">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Cửa hàng</p>
+            <h1 className="mt-2 text-3xl font-bold text-primary sm:text-4xl">Sản phẩm</h1>
+            <p className="mt-2 text-sm font-medium text-secondary">
+              Hiển thị {filteredProducts.length} sản phẩm
+            </p>
           </div>
-          <Sheet>
-            <SheetTrigger render={<Button variant="outline" className="md:hidden" />}>
-              <Filter className="size-4" />
-              Lọc
-            </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-xl border-[--color-border] bg-surface pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <SheetHeader>
-                <SheetTitle>Lọc & Sắp xếp</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">{filterPanel}</div>
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortValue)}>
+                <SelectTrigger className="w-[210px] border-[--color-border] bg-surface font-medium shadow-sm">
+                  <SelectValue>{SORT_LABELS[sortBy]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent className="border-[--color-border] bg-surface">
+                  {Object.entries(SORT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Sheet>
+              <SheetTrigger render={<Button variant="outline" className="md:hidden" />}>
+                <Filter className="size-4" />
+                Lọc
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-xl border-[--color-border] bg-surface pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <SheetHeader>
+                  <SheetTitle>Lọc & Sắp xếp</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">{filterPanel}</div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
-      </div>
 
-      {hasFilter && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        {hasFilter && (
+          <div className="mt-4 flex flex-wrap gap-2">
           {searchQuery.trim().length > 0 && (
             <Badge variant="outline" className="gap-2 rounded-full border-[--color-border] bg-surface px-3 py-1">
               Tìm: <span className="font-bold">{searchQuery}</span>
@@ -254,11 +255,12 @@ function ProductsPageContent() {
               </button>
             </Badge>
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       <div className="grid min-w-0 items-start gap-5 sm:gap-8 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="sticky top-28 hidden md:block">
+        <aside className="sticky top-40 hidden md:block">
           <Card variant="flat" className="border-[--color-border-strong] p-6 shadow-md">
             {filterPanel}
           </Card>

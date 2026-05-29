@@ -2,6 +2,7 @@ import Footer from "@/components/shop/Footer";
 import Header from "@/components/shop/Header";
 import CustomerAreaGuard from "@/components/auth/CustomerAreaGuard";
 import CartDrawerMount from "@/components/shop/CartDrawerMount";
+import AIChatWidget from "@/components/shop/AIChatWidget";
 
 export default function ShopLayout({
   children,
@@ -13,6 +14,7 @@ export default function ShopLayout({
         <main id="main-content" className="pt-16 lg:pt-20">{children}</main>
         <Footer />
         <CartDrawerMount />
+        <AIChatWidget />
       </div>
     </CustomerAreaGuard>
   );
