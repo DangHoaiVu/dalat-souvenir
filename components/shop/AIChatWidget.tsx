@@ -55,6 +55,32 @@ function getWelcomeMessage(): Message {
   };
 }
 
+function renderMessageContent(content: string) {
+  const nodes: React.ReactNode[] = [];
+  const boldPattern = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = boldPattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(content.slice(lastIndex, match.index));
+    }
+
+    nodes.push(
+      <strong key={`bold-${match.index}`} className="font-bold">
+        {match[1]}
+      </strong>,
+    );
+    lastIndex = boldPattern.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    nodes.push(content.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : content;
+}
+
 export default function AIChatWidget() {
   const pathname = usePathname();
   const currentUserId = useAuthStore((state) => state.user?.id);
@@ -361,7 +387,7 @@ export default function AIChatWidget() {
                         : "bg-[var(--color-surface)] text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-tl-none"
                     }`}
                   >
-                    {msg.content}
+                    {renderMessageContent(msg.content)}
                   </div>
                 </div>
               ))}
