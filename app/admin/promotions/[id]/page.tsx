@@ -11,7 +11,8 @@ import {
   CircleDollarSign,
   Info,
   Calendar,
-  PlusCircle
+  PlusCircle,
+  Power
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -121,6 +122,38 @@ export default function PromotionDetailPage() {
     }
   };
 
+  const handleTogglePromotion = async () => {
+    if (!promotion) return;
+    const nextActive = !promotion.is_active;
+
+    try {
+      const res = await authFetch("/api/promotions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promotion_id: promotion.promotion_id,
+          name: promotion.name,
+          start_date: promotion.start_date,
+          end_date: promotion.end_date,
+          image: promotion.image ?? null,
+          description: promotion.description ?? null,
+          fixed_price: promotion.fixed_price ?? null,
+          is_active: nextActive,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        setPromotion((prev) => (prev ? { ...prev, ...data } : prev));
+        toast.success(nextActive ? "Đã bật khuyến mãi" : "Đã tắt khuyến mãi");
+      } else {
+        toast.error(data?.error || "Không thể cập nhật trạng thái khuyến mãi");
+      }
+    } catch {
+      toast.error("Lỗi khi cập nhật trạng thái khuyến mãi");
+    }
+  };
+
   if (isLoading && !promotion) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
@@ -168,8 +201,21 @@ export default function PromotionDetailPage() {
             "font-bold px-3 py-1 border-none",
             promotion.is_active ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
           )}>
-            {promotion.is_active ? "Đang hoạt động" : "Sắp hoạt động"}
+            {promotion.is_active ? "Đang hoạt động" : "Đang tắt"}
           </Badge>
+          <Button
+            variant="outline"
+            onClick={handleTogglePromotion}
+            className={cn(
+              "h-9 rounded-full px-4 text-xs font-bold",
+              promotion.is_active
+                ? "border-green-500/30 text-green-600 hover:bg-green-500/10"
+                : "border-primary/30 text-primary hover:bg-primary/10",
+            )}
+          >
+            <Power className="mr-2 size-4" />
+            {promotion.is_active ? "Tắt ưu đãi" : "Bật ưu đãi"}
+          </Button>
           <Button
             variant="outline"
             onClick={handleDeletePromotion}

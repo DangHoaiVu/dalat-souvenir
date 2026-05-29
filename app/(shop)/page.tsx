@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import ProductCard from "@/components/shop/ProductCard";
+import PromotionPopup from "@/components/shop/PromotionPopup";
 import {
   fetchActivePromotion,
   fetchCategoriesForHome,
@@ -23,7 +24,7 @@ import {
   pickRandomProducts,
 } from "@/lib/shop-data";
 
-export const revalidate = 300;
+export const revalidate = 0;
 
 const categoryDescriptions = [
   "Những món quà gọn nhẹ, dễ mang theo và đậm dấu ấn thành phố sương mù.",
@@ -52,9 +53,8 @@ export default async function Page() {
   const mainHeroProduct = heroProductShowcase[0];
   const mainHeroImage = heroImage;
   const secondaryHeroProducts = heroProductShowcase.slice(1, 3);
-  const heroTitle = activePromotion?.name || "Mang hương vị Đà Lạt về nhà";
+  const heroTitle = "Mang hương vị Đà Lạt về nhà";
   const heroDescription =
-    activePromotion?.description ||
     "Khám phá đặc sản, quà lưu niệm và sản phẩm thủ công được tuyển chọn từ thành phố sương mù.";
   const categoryCards = categories.slice(0, 4);
 
@@ -62,6 +62,7 @@ export default async function Page() {
     <>
       <link rel="preload" as="image" href={heroImage} />
       <div className="min-h-screen text-secondary">
+        <PromotionPopup promotion={activePromotion} />
         <section className="hero-gradient-scene relative overflow-hidden text-white">
           <div className="hero-light-sweep pointer-events-none absolute inset-0" />
           <TreePine className="hero-float-slow pointer-events-none absolute left-5 top-24 size-36 -rotate-12 text-white/10 sm:size-44 lg:left-12 lg:top-28" aria-hidden="true" />
@@ -85,10 +86,10 @@ export default async function Page() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href={activePromotion ? `/promotions/${activePromotion.promotion_id}` : "/products"}
+                  href="/products"
                   className="home-cta-shine inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 text-sm font-bold text-sky-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  {activePromotion ? "Săn ưu đãi" : "Khám phá ngay"}
+                  Khám phá ngay
                   <ArrowRight className="ml-2 size-4" aria-hidden="true" />
                 </Link>
                 <Link
@@ -204,24 +205,6 @@ export default async function Page() {
             </div>
           </div>
         </section>
-
-        {activePromotion && (
-          <section className="home-section-reveal bg-background-soft px-4 py-12 sm:px-6 lg:px-10 2xl:px-12">
-            <div className="home-promo-panel mx-auto grid max-w-[1680px] gap-6 rounded-xl border border-[--color-border] bg-surface p-6 shadow-card md:grid-cols-[1fr_auto] md:items-center md:p-8">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Khuyến mãi đặc biệt</p>
-                <h2 className="mt-2 text-primary">{activePromotion.name}</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-secondary">{activePromotion.description}</p>
-              </div>
-              <Link
-                href={`/promotions/${activePromotion.promotion_id}`}
-                className="home-cta-shine inline-flex min-h-12 items-center justify-center rounded-md bg-accent px-6 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-md"
-              >
-                Nhận ưu đãi ngay
-              </Link>
-            </div>
-          </section>
-        )}
 
         <section className="home-section-reveal bg-background px-4 py-16 sm:px-6 lg:px-10 2xl:px-12">
           <div className="mx-auto max-w-[1680px]">

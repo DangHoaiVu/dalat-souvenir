@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { createAdminSupabaseClient } from '@/lib/supabaseClient';
 import { requireAdmin } from '@/lib/server-auth';
 import type { NextRequest } from 'next/server';
@@ -165,31 +165,27 @@ async function syncPromotionProductPrices(promoId: string) {
   return { error: null };
 }
 
-const getPromotionsCached = unstable_cache(
-  async () => {
-    const { data, error } = await supabase
-      .from('promotions')
-      .select('*')
-      .order('start_date', { ascending: true });
+async function getPromotions() {
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('*')
+    .order('start_date', { ascending: true });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+  if (error) {
+    throw new Error(error.message);
+  }
 
-    const normalized = (data || []).map((row) => normalizePromotion(row as Record<string, unknown>));
-    normalized.sort((a, b) => Number(b.is_active) - Number(a.is_active) || new Date(String(a.start_date ?? "")).getTime() - new Date(String(b.start_date ?? "")).getTime());
-    return normalized;
-  },
-  ["api-promotions"],
-  { revalidate: 120, tags: ["promotions"] },
-);
+  const normalized = (data || []).map((row) => normalizePromotion(row as Record<string, unknown>));
+  normalized.sort((a, b) => Number(b.is_active) - Number(a.is_active) || new Date(String(a.start_date ?? "")).getTime() - new Date(String(b.start_date ?? "")).getTime());
+  return normalized;
+}
 
 export async function GET() {
   try {
-    const data = await getPromotionsCached();
+    const data = await getPromotions();
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error: unknown) {

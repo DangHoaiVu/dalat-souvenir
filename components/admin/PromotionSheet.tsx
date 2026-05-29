@@ -28,6 +28,7 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { uploadAdminImage } from "@/lib/admin-image-upload";
 import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
@@ -182,12 +183,6 @@ export default function PromotionSheet({
     setSaveStatus("Đang lưu...");
     
     const startDate = new Date(form.start_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDateClean = new Date(startDate);
-    startDateClean.setHours(0, 0, 0, 0);
-
-    const isActive = startDateClean.getTime() === today.getTime();
 
     const payload = {
       ...(promotion?.promotion_id ? { promotion_id: promotion.promotion_id } : {}),
@@ -197,7 +192,7 @@ export default function PromotionSheet({
       fixed_price: form.fixed_price ? Number(form.fixed_price) : null,
       description: form.description || null,
       image: finalImageUrl || null,
-      is_active: isActive,
+      is_active: form.is_active,
     };
     
     try {
@@ -416,6 +411,20 @@ export default function PromotionSheet({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">₫</span>
                     <CircleDollarSign className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-zinc-600" />
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-white/50 p-4 dark:bg-white/5">
+                  <div>
+                    <Label className="text-sm font-bold">Hiển thị ưu đãi</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Bật để hiện popup trên trang chủ và áp dụng giá khuyến mãi.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.is_active}
+                    onCheckedChange={(checked) => setForm({ ...form, is_active: Boolean(checked) })}
+                    aria-label="Bật tắt khuyến mãi"
+                  />
                 </div>
               </div>
             </section>

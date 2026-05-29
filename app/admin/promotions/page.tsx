@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Tag, Plus, Search, Pencil, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import { Tag, Plus, Search, Pencil, Trash2, ChevronRight, Loader2, Power } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Promotion } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
+import { cn } from "@/lib/utils";
 
 const formatPrice = (value: number) => `${(value ?? 0).toLocaleString("vi-VN")}đ`;
 const PromotionSheet = dynamic(() => import("@/components/admin/PromotionSheet"), {
@@ -30,7 +31,7 @@ export default function PromotionsPage() {
   const fetchPromotions = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/promotions");
+      const res = await fetch("/api/promotions", { cache: "no-store" });
       const data = await res.json();
       if (res.ok) {
         setPromotions(data);
@@ -80,7 +81,7 @@ export default function PromotionsPage() {
     if (promo.is_active) {
       return { label: "Đang hoạt động", color: "bg-green-500/10 text-green-500" };
     }
-    return { label: "Sắp hoạt động", color: "bg-gray-500/10 text-gray-500" };
+    return { label: "Đang tắt", color: "bg-gray-500/10 text-gray-500" };
   };
 
   const deletePromotion = async (promo: Promotion) => {
@@ -98,6 +99,37 @@ export default function PromotionsPage() {
       }
     } catch {
       toast.error("Lỗi khi xóa khuyến mãi");
+    }
+  };
+
+  const togglePromotion = async (promo: Promotion, nextActive: boolean) => {
+    try {
+      const res = await authFetch("/api/promotions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promotion_id: promo.promotion_id,
+          name: promo.name,
+          start_date: promo.start_date,
+          end_date: promo.end_date,
+          image: promo.image ?? null,
+          description: promo.description ?? null,
+          fixed_price: promo.fixed_price ?? null,
+          is_active: nextActive,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        setPromotions((prev) =>
+          prev.map((item) => (item.promotion_id === promo.promotion_id ? { ...item, ...data } : item)),
+        );
+        toast.success(nextActive ? "Đã bật khuyến mãi" : "Đã tắt khuyến mãi");
+      } else {
+        toast.error(data?.error || "Không thể cập nhật trạng thái khuyến mãi");
+      }
+    } catch {
+      toast.error("Lỗi khi cập nhật trạng thái khuyến mãi");
     }
   };
 
@@ -191,6 +223,23 @@ export default function PromotionsPage() {
                       {new Date(promo.start_date).toLocaleDateString('vi-VN')} - {new Date(promo.end_date).toLocaleDateString('vi-VN')}
                     </span>
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className={cn(
+                          "h-8 w-8 transition-all",
+                          promo.is_active
+                            ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                        )}
+                        title={promo.is_active ? "Tắt khuyến mãi" : "Bật khuyến mãi"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePromotion(promo, !promo.is_active);
+                        }}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"

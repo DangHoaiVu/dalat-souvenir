@@ -167,6 +167,7 @@ export async function fetchRelatedProducts(
 }
 
 export async function fetchActivePromotion(): Promise<ActivePromotion | null> {
+  noStore();
   const adminSupabase = createAdminSupabaseClient();
 
   const { data, error } = await adminSupabase
