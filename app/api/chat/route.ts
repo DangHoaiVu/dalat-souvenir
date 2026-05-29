@@ -467,13 +467,29 @@ export async function POST(req: Request) {
     const contents = buildGenaiContents(messages);
 
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: contents as any,
-      config: {
-        systemInstruction: systemInstruction,
-      } as any,
-    });
+    let response: any = null;
+    let lastError: any = null;
+    const modelsToTry = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+
+    for (const modelName of modelsToTry) {
+      try {
+        response = await ai.models.generateContent({
+          model: modelName,
+          contents: contents as any,
+          config: {
+            systemInstruction: systemInstruction,
+          } as any,
+        });
+        if (response) break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`[API/Chat] Failed to call ${modelName}:`, err);
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error("All Gemini models failed to respond.");
+    }
 
     const text = response.text?.trim() || "";
     return NextResponse.json({ reply: text });
