@@ -450,9 +450,10 @@ export async function POST(req: Request) {
     const isMockMode = !apiKey || apiKey.includes("your_gemini_api_key");
 
     if (isMockMode) {
+      const keyStatus = !apiKey ? "Trống (Chưa nhận được key)" : apiKey.includes("your_gemini_api_key") ? "Key mẫu (Placeholder)" : "Có key nhưng bị lọc";
       await new Promise((resolve) => setTimeout(resolve, 500));
       return NextResponse.json({
-        reply: buildFallbackReply(messages, products, promotions),
+        reply: `*(Đang chạy chế độ Giả lập. Trạng thái Key trên Vercel: ${keyStatus})*\n\n` + buildFallbackReply(messages, products, promotions),
         fallback: true,
       });
     }
