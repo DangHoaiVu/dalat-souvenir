@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { createAdminSupabaseClient } from "@/lib/supabaseClient";
 import { CATEGORIES, PRODUCTS } from "@/features/products/mock-data";
 
@@ -28,8 +28,6 @@ type ChatPromotion = {
   fixed_price?: number | string | null;
 };
 
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
@@ -40,27 +38,26 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
-function buildGeminiHistory(messages: ChatMessage[]) {
-  const history: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
+function buildGenaiContents(messages: ChatMessage[]) {
+  const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
 
   for (const message of messages) {
-    if (history.length === 0 && message.role !== "user") continue;
-
     const role = message.role === "assistant" ? "model" : "user";
-    const previous = history[history.length - 1];
+    
+    // Chat history in Gemini must start with a user message
+    if (contents.length === 0 && role === "model") {
+      continue;
+    }
 
+    const previous = contents[contents.length - 1];
     if (previous?.role === role) {
       previous.parts[0].text += `\n${message.content.trim()}`;
     } else {
-      history.push({ role, parts: [{ text: message.content.trim() }] });
+      contents.push({ role, parts: [{ text: message.content.trim() }] });
     }
   }
 
-  while (history.at(-1)?.role === "user") {
-    history.pop();
-  }
-
-  return history;
+  return contents;
 }
 
 function getGeminiApiKey() {
@@ -72,53 +69,6 @@ function getGeminiApiKey() {
     process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
     ""
   ).trim();
-}
-
-async function generateGeminiReply(
-  apiKey: string,
-  systemInstruction: string,
-  history: ReturnType<typeof buildGeminiHistory>,
-  message: string,
-) {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  let lastError: unknown;
-
-  for (const modelName of GEMINI_MODELS) {
-    try {
-      // 1. Try standard string instruction (Gemini SDK v0.24.0+)
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: systemInstruction,
-      });
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessage(message);
-      const text = result.response.text().trim();
-      if (text) return text;
-    } catch (error) {
-      lastError = error;
-      console.warn(`[API/Chat] Gemini model ${modelName} with string instruction failed, trying fallback:`, error);
-      
-      try {
-        // 2. Try content object shape instruction for older SDK configurations
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: {
-            role: "system",
-            parts: [{ text: systemInstruction }]
-          } as any
-        });
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessage(message);
-        const text = result.response.text().trim();
-        if (text) return text;
-      } catch (innerError) {
-        lastError = innerError;
-        console.error(`[API/Chat] Gemini model ${modelName} failed completely:`, innerError);
-      }
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error("Gemini returned no response");
 }
 
 function toNumber(value: number | string | null | undefined) {
@@ -464,7 +414,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Thiếu nội dung câu hỏi." }, { status: 400 });
     }
 
-    // Try to fetch Supabase data but catch errors so they don't break the chatbot
     try {
       const supabase = createAdminSupabaseClient();
       const [categoriesResult, productsResult, promotionsResult] = await Promise.all([
@@ -484,7 +433,6 @@ export async function POST(req: Request) {
       promotions = promotionsResult.data || [];
     } catch (dbError) {
       console.warn("[API/Chat] Supabase query failed, falling back to mock catalog:", dbError);
-      // fallback to mock catalog so the chatbot always has data
       products = PRODUCTS.map(p => ({
         product_id: p.product_id,
         name: p.name,
@@ -515,13 +463,21 @@ export async function POST(req: Request) {
       buildProductsContext(products, categoryMap),
       buildPromotionsContext(promotions),
     );
-    const formattedHistory = buildGeminiHistory(messages.slice(0, -1));
-    const lastMessage = messages[messages.length - 1]?.content || "";
-    const text = await generateGeminiReply(apiKey, systemInstruction, formattedHistory, lastMessage);
+    const contents = buildGenaiContents(messages);
 
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: contents,
+      config: {
+        systemInstruction: systemInstruction,
+      },
+    });
+
+    const text = response.text?.trim() || "";
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
-    console.error("[API/Chat] Error calling Gemini, using fallback responder:", error);
+    console.error("[API/Chat] Error calling GoogleGenAI, using fallback responder:", error);
     const errMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json({
       reply: `*(Lỗi kết nối Gemini API thật: ${errMessage})*\n\n` + buildFallbackReply(messages, products, promotions),
