@@ -95,6 +95,76 @@ async function updatePromotion(promoId: string, payload: Record<string, unknown>
   return { data: null, error: { message: "Unable to update promotion" } };
 }
 
+async function syncPromotionProductPrices(promoId: string) {
+  const { data: promotion, error: promotionError } = await supabase
+    .from("promotions")
+    .select("promotion_id, fixed_price, is_active")
+    .eq("promotion_id", promoId)
+    .single();
+
+  if (promotionError) {
+    return { error: promotionError };
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from("promotion_items")
+    .select("product_id, discount_percentage")
+    .eq("promotion_id", promoId);
+
+  if (itemsError) {
+    return { error: itemsError };
+  }
+
+  const productIds = (items ?? []).map((item) => item.product_id).filter(Boolean);
+  if (productIds.length === 0) {
+    return { error: null };
+  }
+
+  if (!promotion.is_active) {
+    const { error } = await supabase
+      .from("products")
+      .update({ promoted_price: null })
+      .in("product_id", productIds);
+    return { error };
+  }
+
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("product_id, price")
+    .in("product_id", productIds);
+
+  if (productsError) {
+    return { error: productsError };
+  }
+
+  for (const item of items ?? []) {
+    const product = (products ?? []).find((row) => row.product_id === item.product_id);
+    if (!product) continue;
+
+    const price = Number(product.price);
+    const fixedPrice = promotion.fixed_price != null ? Number(promotion.fixed_price) : null;
+    const discount = item.discount_percentage != null ? Number(item.discount_percentage) : 0;
+    let promotedPrice: number | null = null;
+
+    if (fixedPrice != null && fixedPrice > 0 && fixedPrice <= price && !discount) {
+      promotedPrice = fixedPrice;
+    } else if (discount > 0) {
+      promotedPrice = Math.round(price * (1 - discount / 100));
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update({ promoted_price: promotedPrice })
+      .eq("product_id", product.product_id);
+
+    if (error) {
+      return { error };
+    }
+  }
+
+  return { error: null };
+}
+
 const getPromotionsCached = unstable_cache(
   async () => {
     const { data, error } = await supabase
@@ -185,6 +255,12 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "No promotion updated or multiple rows returned" }, { status: 404 });
     }
 
+    const { error: syncError } = await syncPromotionProductPrices(String(promoId));
+    if (syncError) {
+      console.error('[API/Promotions] Price sync error:', syncError);
+      return NextResponse.json({ error: syncError.message }, { status: 500 });
+    }
+
     revalidateTag("promotions");
     revalidateTag("products");
     return NextResponse.json(normalizePromotion(data[0] as Record<string, unknown>));
@@ -206,6 +282,40 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: "Missing promotion id" }, { status: 400 });
+    }
+
+    const { data: items, error: itemsError } = await supabase
+      .from('promotion_items')
+      .select('product_id')
+      .eq('promotion_id', id);
+
+    if (itemsError) {
+      console.error('[API/Promotions] Load items before delete error:', itemsError);
+      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    }
+
+    const productIds = (items ?? []).map((item) => item.product_id).filter(Boolean);
+
+    const { error: deleteItemsError } = await supabase
+      .from('promotion_items')
+      .delete()
+      .eq('promotion_id', id);
+
+    if (deleteItemsError) {
+      console.error('[API/Promotions] Delete items error:', deleteItemsError);
+      return NextResponse.json({ error: deleteItemsError.message }, { status: 500 });
+    }
+
+    if (productIds.length > 0) {
+      const { error: resetError } = await supabase
+        .from('products')
+        .update({ promoted_price: null })
+        .in('product_id', productIds);
+
+      if (resetError) {
+        console.error('[API/Promotions] Reset product prices error:', resetError);
+        return NextResponse.json({ error: resetError.message }, { status: 500 });
+      }
     }
 
     const { error } = await supabase

@@ -53,7 +53,7 @@ export default async function PromotionPage({ params }: PromotionPageProps) {
                 alt={promotion.name}
                 fill
                 sizes="(min-width: 1024px) 42vw, 100vw"
-                className="object-cover transition-transform duration-500 hover:scale-105"
+                className="object-contain p-2 transition-transform duration-500 hover:scale-[1.02]"
                 priority
               />
             </div>

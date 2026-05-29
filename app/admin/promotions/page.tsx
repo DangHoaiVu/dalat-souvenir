@@ -143,7 +143,7 @@ export default function PromotionsPage() {
                     alt={promo.name}
                     fill
                     sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.02]"
                   />
                 </div>
 

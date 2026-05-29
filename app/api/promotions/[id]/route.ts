@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { createAdminSupabaseClient } from '@/lib/supabaseClient';
+import { requireAdmin } from '@/lib/server-auth';
 import type { NextRequest } from 'next/server';
 
 const supabase = createAdminSupabaseClient();
@@ -63,6 +65,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const { id: promotion_id } = params;
     const body = await req.json();
@@ -127,6 +134,8 @@ export async function POST(
       }
     }
 
+    revalidateTag('promotions');
+    revalidateTag('products');
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[API/Promotions/Detail] POST Error:', error);
@@ -138,6 +147,11 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const { id: promotion_id } = params;
     const { searchParams } = new URL(req.url);
@@ -161,6 +175,8 @@ export async function DELETE(
       .update({ promoted_price: null })
       .eq('product_id', product_id);
 
+    revalidateTag('promotions');
+    revalidateTag('products');
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[API/Promotions/Detail] DELETE Error:', error);

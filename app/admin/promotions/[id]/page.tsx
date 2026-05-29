@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { authFetch } from "@/lib/auth-fetch";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Promotion, Product } from "@/types";
 
@@ -85,7 +86,7 @@ export default function PromotionDetailPage() {
     if (!confirm("Xóa sản phẩm này khỏi chương trình khuyến mãi?")) return;
     
     try {
-      const res = await fetch(`/api/promotions/${id}?product_id=${productId}`, {
+      const res = await authFetch(`/api/promotions/${id}?product_id=${productId}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -160,7 +161,7 @@ export default function PromotionDetailPage() {
                 alt={promotion.name}
                 fill
                 sizes="(min-width: 768px) 480px, 100vw"
-                className="object-cover transition-transform duration-700 hover:scale-105"
+                className="object-contain p-2 transition-transform duration-700 hover:scale-[1.02]"
               />
             </div>
 
@@ -172,8 +173,7 @@ export default function PromotionDetailPage() {
                     <PlusCircle className="size-3" />
                     <span>Chi tiết chương trình</span>
                   </div>
-                  {!promotion.is_active && (
-                    <Button 
+                  <Button
                       variant="outline" 
                       onClick={() => setOpenInfoSheet(true)}
                       className="rounded-2xl border-border bg-secondary hover:bg-secondary/80 shrink-0 px-6 gap-2 h-10 text-xs font-bold"
@@ -181,7 +181,6 @@ export default function PromotionDetailPage() {
                       <Pencil className="size-3.5" />
                       Sửa chương trình
                     </Button>
-                  )}
                 </div>
                 
                 <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground">{promotion.name}</h1>
@@ -227,8 +226,7 @@ export default function PromotionDetailPage() {
             </h2>
             <p className="text-sm text-muted-foreground font-medium ml-13">Quản lý các sản phẩm sẽ được hưởng ưu đãi này.</p>
           </div>
-          {!promotion.is_active && (
-            <Button 
+          <Button
               onClick={() => {
                 setEditingItem(null);
                 setOpenItemSheet(true);
@@ -238,7 +236,6 @@ export default function PromotionDetailPage() {
               <Plus className="size-5 mr-2" />
               Thêm sản phẩm
             </Button>
-          )}
         </div>
 
         {promotion.items.length > 0 ? (
@@ -257,7 +254,14 @@ export default function PromotionDetailPage() {
             ))}
           </div>
         ) : (
-          <div className="h-60 rounded-[2.5rem] border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground gap-4 bg-muted/20">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingItem(null);
+              setOpenItemSheet(true);
+            }}
+            className="h-60 w-full rounded-[2.5rem] border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground gap-4 bg-muted/20 transition hover:border-primary/40 hover:bg-primary/5"
+          >
              <div className="size-20 rounded-full bg-muted flex items-center justify-center animate-pulse">
                <PlusCircle className="size-10 text-muted-foreground/50" />
              </div>
@@ -265,7 +269,7 @@ export default function PromotionDetailPage() {
                 <p className="font-bold text-lg text-muted-foreground italic">Chưa có sản phẩm nào</p>
                 <p className="text-sm">Hãy bắt đầu bằng cách thêm sản phẩm đầu tiên vào chương trình.</p>
              </div>
-          </div>
+          </button>
         )}
       </div>
     </div>
@@ -316,8 +320,7 @@ function PromotionItemCard({
                    <h3 className="font-black text-lg truncate text-foreground pr-4">{product.name}</h3>
                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{product.unit || "Sản phẩm"}</span>
                 </div>
-                {!promotion.is_active && (
-                   <div className="flex gap-1">
+                <div className="flex gap-1">
                       <Button size="icon" variant="ghost" onClick={onEdit} className="size-9 rounded-full hover:bg-primary/20 hover:text-primary transition-all">
                          <Pencil className="size-4" />
                       </Button>
@@ -325,7 +328,6 @@ function PromotionItemCard({
                          <Trash2 className="size-4" />
                       </Button>
                    </div>
-                )}
              </div>
              
              <div className="flex items-center gap-4">

@@ -28,6 +28,7 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
+import { authFetch } from "@/lib/auth-fetch";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Product, Promotion } from "@/types";
 import ProductSelectionDialog from "./ProductSelectionDialog";
@@ -106,7 +107,7 @@ export default function PromotionItemSheet({
     setIsSaving(true);
 
     try {
-      const res = await fetch(`/api/promotions/${promotion.promotion_id}`, {
+      const res = await authFetch(`/api/promotions/${promotion.promotion_id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

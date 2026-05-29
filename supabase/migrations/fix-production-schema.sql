@@ -3,6 +3,7 @@
 
 ALTER TABLE public.promotions
   ADD COLUMN IF NOT EXISTS description text,
+  ADD COLUMN IF NOT EXISTS image text,
   ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true,
   ADD COLUMN IF NOT EXISTS fixed_price numeric;
 
