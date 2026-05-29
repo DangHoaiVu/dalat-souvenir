@@ -177,6 +177,20 @@ export default function AIChatWidget() {
     setMessages([welcomeMessage]);
   };
 
+  const renderMessageContent = (content: string, isUser: boolean) => {
+    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={index} className={`font-bold ${isUser ? "text-white font-extrabold" : "text-[var(--color-text-primary)] dark:text-white"}`}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
       {/* CSS Animations for the Mascot */}
@@ -255,7 +269,7 @@ export default function AIChatWidget() {
                         : "bg-[var(--color-surface)] text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-tl-none"
                     }`}
                   >
-                    {msg.content}
+                    {renderMessageContent(msg.content, msg.role === "user")}
                   </div>
                 </div>
               ))}
