@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquare, X, Send, Sparkles, AlertCircle } from "lucide-react";
+import { X, Send, Sparkles, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { authFetch } from "@/lib/auth-fetch";
@@ -35,6 +35,11 @@ const QUICK_PROMPTS = [
 ];
 
 const GUEST_CHAT_KEY = "dalat_souvenir_chat_history:guest";
+const SPEECH_BUBBLES = [
+  "Chào bạn iu! Bé có thể giúp gì hông nè?",
+  "Đà Lạt hôm nay se lạnh, bạn cần tìm đồ ấm áp hông?",
+  "Có quà xinh cần bé tư vấn không nè?",
+];
 
 function getWelcomeMessage(): Message {
   return {
@@ -53,6 +58,9 @@ export default function AIChatWidget() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showSpeechBubble, setShowSpeechBubble] = useState(false);
+  const [speechText, setSpeechText] = useState(SPEECH_BUBBLES[0]);
+  const [attentionKey, setAttentionKey] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -98,6 +106,24 @@ export default function AIChatWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    const message = SPEECH_BUBBLES[Math.floor(Math.random() * SPEECH_BUBBLES.length)];
+    const showTimer = window.setTimeout(() => {
+      setSpeechText(message);
+      setShowSpeechBubble(true);
+    }, 4000);
+    const hideTimer = window.setTimeout(() => setShowSpeechBubble(false), 10000);
+    const attentionTimer = window.setInterval(() => {
+      setAttentionKey((value) => value + 1);
+    }, 15000);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+      window.clearInterval(attentionTimer);
+    };
+  }, []);
 
   if (isHidden) return null;
 
@@ -171,7 +197,93 @@ export default function AIChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <>
+      <style jsx global>{`
+        @keyframes dalat-cat-breathe {
+          0%,
+          100% {
+            transform: scaleY(0.985) translateY(0);
+          }
+          50% {
+            transform: scaleY(1.02) translateY(-1px);
+          }
+        }
+
+        @keyframes dalat-cat-tail {
+          0%,
+          100% {
+            transform: rotate(-8deg);
+          }
+          50% {
+            transform: rotate(12deg);
+          }
+        }
+
+        @keyframes dalat-cat-blink {
+          0%,
+          88%,
+          100% {
+            transform: scaleY(1);
+          }
+          92%,
+          96% {
+            transform: scaleY(0.12);
+          }
+        }
+
+        @keyframes dalat-cat-paw {
+          0%,
+          100% {
+            transform: rotate(0deg) translateY(0);
+          }
+          50% {
+            transform: rotate(-18deg) translateY(-4px);
+          }
+        }
+
+        .dalat-cat-body {
+          animation: dalat-cat-breathe 3.4s ease-in-out infinite;
+          transform-origin: 64px 92px;
+        }
+
+        .dalat-cat-tail {
+          animation: dalat-cat-tail 2.8s ease-in-out infinite;
+          transform-box: fill-box;
+          transform-origin: 10% 90%;
+        }
+
+        .dalat-cat-eye {
+          animation: dalat-cat-blink 5.5s ease-in-out infinite;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+
+        .dalat-cat-paw {
+          transition: transform 180ms ease;
+          transform-box: fill-box;
+          transform-origin: 70% 70%;
+        }
+
+        .dalat-cat-button:hover .dalat-cat-paw {
+          animation: dalat-cat-paw 0.8s ease-in-out infinite;
+        }
+
+        .dalat-cat-ear {
+          transition: transform 180ms ease;
+          transform-box: fill-box;
+          transform-origin: bottom center;
+        }
+
+        .dalat-cat-button:hover .dalat-cat-ear-left {
+          transform: rotate(-8deg) translateY(-2px);
+        }
+
+        .dalat-cat-button:hover .dalat-cat-ear-right {
+          transform: rotate(8deg) translateY(-2px);
+        }
+      `}</style>
+
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
@@ -180,7 +292,7 @@ export default function AIChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="mb-4 flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl sm:w-[400px]"
+            className="mb-4 flex h-[min(520px,calc(100vh-7rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
           >
             {/* Header */}
             <div className="relative flex items-center justify-between bg-gradient-to-r from-sky-600 via-sky-500 to-sky-400 p-4 text-white">
@@ -295,43 +407,157 @@ export default function AIChatWidget() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
-      {/* Floating Toggle Button */}
-      <motion.button
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex size-14 items-center justify-center rounded-full bg-gradient-to-r from-sky-600 via-sky-500 to-sky-400 text-white shadow-xl hover:shadow-sky-500/20 transition-all border border-sky-400/20 relative"
+      {/* Draggable Mascot Toggle */}
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragElastic={0.2}
+        initial={{ opacity: 0, y: 18, scale: 0.88 }}
+        animate={{
+          opacity: isOpen ? 0 : 1,
+          y: isOpen ? 18 : 0,
+          scale: isOpen ? 0.65 : 1,
+        }}
+        style={{ pointerEvents: isOpen ? "none" : "auto" }}
+        transition={{ type: "spring", stiffness: 420, damping: 26 }}
+        whileDrag={{ scale: 1.06, rotate: 2 }}
+        className="fixed bottom-5 right-5 z-50 flex cursor-grab flex-col items-center active:cursor-grabbing"
       >
-        <AnimatePresence mode="wait">
-          {isOpen ? (
+        <AnimatePresence>
+          {showSpeechBubble && !isOpen && (
             <motion.div
-              key="close"
-              initial={{ rotate: -45, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 45, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, y: 10, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="absolute bottom-[88px] right-0 w-64 rounded-2xl border border-sky-100 bg-white/90 p-3 pr-9 text-sm font-semibold leading-relaxed text-slate-700 shadow-lg backdrop-blur-md"
+              onClick={() => setIsOpen(true)}
             >
-              <X className="size-6" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="chat"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="relative"
-            >
-              <MessageSquare className="size-6" />
-              <span className="absolute -top-1.5 -right-1.5 flex size-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
-                <span className="relative inline-flex size-3 rounded-full bg-yellow-500" />
-              </span>
+              <button
+                type="button"
+                aria-label="Tắt lời chào"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setShowSpeechBubble(false);
+                }}
+                className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-sky-50 hover:text-sky-600"
+              >
+                <X className="size-3.5" />
+              </button>
+              {speechText}
+              <span className="absolute -bottom-2 right-8 size-4 rotate-45 border-b border-r border-sky-100 bg-white/90" />
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.button>
-    </div>
+
+        <motion.button
+          key={attentionKey}
+          type="button"
+          aria-label="Mở trợ lý Đà Lạt Souvenir"
+          onClick={() => {
+            setShowSpeechBubble(false);
+            setIsOpen(true);
+          }}
+          initial={{ y: 0, rotate: 0 }}
+          animate={{ y: [0, -10, 0], rotate: [0, -5, 4, 0] }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          whileHover={{ scale: 1.08, y: -4 }}
+          whileTap={{ scale: 0.96 }}
+          className="dalat-cat-button relative flex size-24 items-center justify-center border-0 bg-transparent p-0 outline-none drop-shadow-[0_18px_24px_rgba(14,116,144,0.28)]"
+        >
+          <CatMascot />
+          <span className="absolute right-3 top-5 flex size-3.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex size-3.5 rounded-full border-2 border-white bg-emerald-500" />
+          </span>
+        </motion.button>
+      </motion.div>
+    </>
+  );
+}
+
+function CatMascot() {
+  return (
+    <svg
+      width="104"
+      height="104"
+      viewBox="0 0 128 128"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className="overflow-visible"
+    >
+      <motion.g
+        initial={false}
+        whileHover={{ rotate: [-2, 2, -1, 0] }}
+        transition={{ duration: 0.5 }}
+      >
+        <ellipse cx="65" cy="111" rx="37" ry="9" fill="#075985" opacity="0.18" />
+        <path
+          className="dalat-cat-tail"
+          d="M91 82C111 77 115 58 105 50C98 44 89 50 92 58C95 65 105 62 105 55"
+          stroke="#F59E0B"
+          strokeWidth="11"
+          strokeLinecap="round"
+        />
+        <path
+          className="dalat-cat-tail"
+          d="M91 82C111 77 115 58 105 50C98 44 89 50 92 58C95 65 105 62 105 55"
+          stroke="#FDE68A"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+
+        <g className="dalat-cat-body">
+          <path
+            d="M32 54C29 36 35 24 45 18L57 34C62 33 67 33 72 34L84 18C95 24 100 37 96 55C105 64 109 78 105 92C100 112 81 119 64 119C47 119 28 112 23 92C19 78 23 64 32 54Z"
+            fill="#FFF7ED"
+            stroke="#0EA5E9"
+            strokeWidth="3"
+          />
+          <path
+            className="dalat-cat-ear dalat-cat-ear-left"
+            d="M43 22L35 48L58 36L43 22Z"
+            fill="#FDE68A"
+            stroke="#0EA5E9"
+            strokeWidth="3"
+          />
+          <path
+            className="dalat-cat-ear dalat-cat-ear-right"
+            d="M85 22L70 36L93 48L85 22Z"
+            fill="#FDE68A"
+            stroke="#0EA5E9"
+            strokeWidth="3"
+          />
+          <path d="M48 84C52 96 75 96 80 84C82 101 75 111 64 111C53 111 46 101 48 84Z" fill="#FED7AA" />
+          <path d="M54 69C57 73 61 73 64 69C67 73 71 73 74 69" stroke="#0F172A" strokeWidth="3" strokeLinecap="round" />
+          <path d="M64 62L59 67H69L64 62Z" fill="#F97316" />
+          <g className="dalat-cat-eye">
+            <ellipse cx="49" cy="57" rx="5" ry="6" fill="#0F172A" />
+            <ellipse cx="79" cy="57" rx="5" ry="6" fill="#0F172A" />
+            <circle cx="51" cy="54" r="1.6" fill="white" />
+            <circle cx="81" cy="54" r="1.6" fill="white" />
+          </g>
+          <path d="M37 66C26 62 18 62 10 66" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <path d="M37 74C26 74 18 78 11 84" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <path d="M91 66C102 62 110 62 118 66" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <path d="M91 74C102 74 110 78 117 84" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <path className="dalat-cat-paw" d="M38 91C31 91 27 96 28 102C29 108 38 108 43 102" fill="#FDBA74" stroke="#0EA5E9" strokeWidth="3" strokeLinecap="round" />
+          <path d="M90 91C97 91 101 96 100 102C99 108 90 108 85 102" fill="#FDBA74" stroke="#0EA5E9" strokeWidth="3" strokeLinecap="round" />
+          <path d="M57 45C62 40 68 40 73 45" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="35" cy="76" r="4" fill="#FBCFE8" opacity="0.9" />
+          <circle cx="93" cy="76" r="4" fill="#FBCFE8" opacity="0.9" />
+        </g>
+        <motion.g
+          animate={{ y: [0, -5, 0], opacity: [0.8, 1, 0.8] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <path d="M24 20L27 27L34 30L27 33L24 40L21 33L14 30L21 27L24 20Z" fill="#FACC15" />
+          <path d="M103 20L105 25L110 27L105 29L103 34L101 29L96 27L101 25L103 20Z" fill="#38BDF8" />
+        </motion.g>
+      </motion.g>
+    </svg>
   );
 }
