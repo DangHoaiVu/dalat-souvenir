@@ -83,6 +83,24 @@ export default function PromotionsPage() {
     return { label: "Sắp hoạt động", color: "bg-gray-500/10 text-gray-500" };
   };
 
+  const deletePromotion = async (promo: Promotion) => {
+    if (!confirm(`Xóa khuyến mãi "${promo.name}"? Các sản phẩm áp dụng sẽ được gỡ ưu đãi.`)) return;
+
+    try {
+      const res = await authFetch(`/api/promotions?id=${promo.promotion_id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        setPromotions((prev) => prev.filter((p) => p.promotion_id !== promo.promotion_id));
+        toast.success("Đã xóa khuyến mãi");
+      } else {
+        toast.error(data?.error || "Không thể xóa khuyến mãi");
+      }
+    } catch {
+      toast.error("Lỗi khi xóa khuyến mãi");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PromotionSheet 
@@ -173,45 +191,29 @@ export default function PromotionsPage() {
                       {new Date(promo.start_date).toLocaleDateString('vi-VN')} - {new Date(promo.end_date).toLocaleDateString('vi-VN')}
                     </span>
                     <div className="flex items-center gap-1">
-                      {status.label !== "Đang hoạt động" && (
-                        <>
-                          <Button 
-                            variant="ghost" 
-                            size="icon-sm" 
-                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingPromotion(promo);
-                              setOpenSheet(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon-sm" 
-                            className="h-8 w-8 text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-all"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm("Bạn có chắc chắn muốn xóa khuyến mãi này?")) {
-                                try {
-                                  const res = await authFetch(`/api/promotions?id=${promo.promotion_id}`, { method: "DELETE" });
-                                  if (res.ok) {
-                                    setPromotions(prev => prev.filter(p => p.promotion_id !== promo.promotion_id));
-                                    toast.success("Đã xóa khuyến mãi");
-                                  } else {
-                                    toast.error("Không thể xóa khuyến mãi");
-                                  }
-                                } catch {
-                                  toast.error("Lỗi khi xóa khuyến mãi");
-                                }
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPromotion(promo);
+                          setOpenSheet(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-8 w-8 text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePromotion(promo);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>

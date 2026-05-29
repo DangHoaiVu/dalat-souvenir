@@ -100,6 +100,27 @@ export default function PromotionDetailPage() {
     }
   };
 
+  const handleDeletePromotion = async () => {
+    if (!promotion) return;
+    if (!confirm(`Xóa khuyến mãi "${promotion.name}"? Các sản phẩm áp dụng sẽ được gỡ ưu đãi.`)) return;
+
+    try {
+      const res = await authFetch(`/api/promotions?id=${promotion.promotion_id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        toast.success("Đã xóa khuyến mãi");
+        router.push("/admin/promotions");
+      } else {
+        toast.error(data?.error || "Không thể xóa khuyến mãi");
+      }
+    } catch {
+      toast.error("Lỗi khi xóa khuyến mãi");
+    }
+  };
+
   if (isLoading && !promotion) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
@@ -142,12 +163,22 @@ export default function PromotionDetailPage() {
           </div>
           <span className="font-medium text-sm">Danh sách</span>
         </Link>
-        <Badge className={cn(
-          "font-bold px-3 py-1 border-none",
-          promotion.is_active ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
-        )}>
-          {promotion.is_active ? "Đang hoạt động" : "Sắp hoạt động"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className={cn(
+            "font-bold px-3 py-1 border-none",
+            promotion.is_active ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
+          )}>
+            {promotion.is_active ? "Đang hoạt động" : "Sắp hoạt động"}
+          </Badge>
+          <Button
+            variant="outline"
+            onClick={handleDeletePromotion}
+            className="h-9 rounded-full border-destructive/30 px-4 text-xs font-bold text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="mr-2 size-4" />
+            Xóa khuyến mãi
+          </Button>
+        </div>
       </div>
 
       {/* Main Promotion Info Card */}
