@@ -68,6 +68,7 @@ function getGeminiApiKey() {
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
     ""
   ).trim();
 }
@@ -139,6 +140,58 @@ function pickProducts(products: ChatProduct[], keywords: string[], limit = 5) {
 function formatProductSuggestions(products: ChatProduct[]) {
   if (products.length === 0) return "";
   return ["", "Một vài sản phẩm phù hợp trong shop:", ...products.map(formatProductLine)].join("\n");
+}
+
+function buildSleepAdviceReply(products: ChatProduct[]) {
+  const relaxingProducts = pickProducts(products, [
+    "nến",
+    "nen",
+    "lavender",
+    "thông rừng",
+    "thong rung",
+    "trà",
+    "tra",
+    "atiso",
+  ], 4);
+
+  return [
+    "Dạ nếu anh/chị muốn **dễ ngủ hơn**, mình có thể thử vài cách nhẹ nhàng này trước ạ:",
+    "",
+    "- Tắt điện thoại/màn hình trước khi ngủ khoảng **30-60 phút**.",
+    "- Giữ phòng mát, tối, yên tĩnh; hạn chế cà phê/trà đặc sau chiều tối.",
+    "- Thử hít thở chậm: hít vào 4 giây, giữ 2 giây, thở ra 6 giây, lặp lại vài phút.",
+    "- Có thể tắm nước ấm, nghe nhạc nhẹ hoặc đọc vài trang sách để cơ thể dịu lại.",
+    "- Nếu mất ngủ kéo dài nhiều ngày, ảnh hưởng học/làm việc hoặc kèm lo âu mạnh thì nên hỏi bác sĩ/chuyên gia.",
+    relaxingProducts.length > 0
+      ? [
+          "",
+          "Nếu muốn tạo cảm giác thư giãn trong phòng, shop có vài món hợp vibe nhẹ nhàng:",
+          ...relaxingProducts.map(formatProductLine),
+        ].join("\n")
+      : "",
+  ].filter(Boolean).join("\n");
+}
+
+function buildTravelAdviceReply() {
+  return [
+    "Dạ nếu anh/chị chuẩn bị đi Đà Lạt hoặc mua quà kiểu Đà Lạt, em gợi ý nhanh như này:",
+    "",
+    "- Thời tiết Đà Lạt thường mát, nên mang áo khoác mỏng, giày dễ đi và ô/áo mưa nhẹ.",
+    "- Quà dễ mua: trà atiso, hồng treo gió, mứt/dâu sấy, móc khóa, túi tote, nến thơm hoặc đồ len.",
+    "- Nếu mua tặng người lớn: ưu tiên trà, hồng treo, set đặc sản đóng gói.",
+    "- Nếu mua tặng bạn bè/người yêu: ưu tiên đồ handmade, nến thơm, túi, móc khóa hoặc phụ kiện nhỏ xinh.",
+  ].join("\n");
+}
+
+function buildStudyAdviceReply() {
+  return [
+    "Dạ nếu anh/chị muốn học/làm việc tập trung hơn, có thể thử cách ngắn gọn này:",
+    "",
+    "- Chia việc thành phiên **25 phút tập trung + 5 phút nghỉ**.",
+    "- Trước mỗi phiên chỉ đặt 1 mục tiêu nhỏ, ví dụ: học xong 2 trang hoặc sửa xong 1 lỗi.",
+    "- Để điện thoại xa tay, tắt thông báo trong lúc làm.",
+    "- Sau 3-4 phiên thì nghỉ dài hơn 15-20 phút để não hồi lại.",
+  ].join("\n");
 }
 
 function buildFallbackReply(
@@ -250,6 +303,18 @@ function buildFallbackReply(
     ].filter(Boolean).join("\n");
   }
 
+  if (/(ngủ|ngu|mất ngủ|mat ngu|dễ ngủ|de ngu|khó ngủ|kho ngu|sleep|insomnia|thư giãn|thu gian)/.test(lastMessage)) {
+    return buildSleepAdviceReply(products);
+  }
+
+  if (/(du lịch|du lich|đi đà lạt|di da lat|đà lạt chơi|da lat choi|mua quà đà lạt|mua qua da lat)/.test(lastMessage)) {
+    return buildTravelAdviceReply();
+  }
+
+  if (/(học|hoc|ôn thi|on thi|tập trung|tap trung|deadline|làm việc|lam viec)/.test(lastMessage)) {
+    return buildStudyAdviceReply();
+  }
+
   if (/(giá|bao nhiêu|sản phẩm|món nào|mua gì|gợi ý|tư vấn|quà cho)/.test(lastMessage)) {
     const availableProducts = products
       .filter((product) => product.name && getProductPrice(product) > 0)
@@ -284,13 +349,13 @@ function buildFallbackReply(
   }
 
   return [
-    "Dạ em hiểu câu hỏi của anh/chị ạ.",
+    "Dạ để em trả lời theo hướng hữu ích nhất ạ.",
     "",
-    "Nếu câu hỏi liên quan đến shop, em có thể tư vấn sản phẩm, giá, khuyến mãi, thanh toán, giao hàng và đơn hàng. Nếu là câu hỏi phổ thông, em cũng sẽ cố gắng trả lời ngắn gọn, dễ hiểu như một trợ lý AI.",
+    "Với câu hỏi này, em chưa đủ ngữ cảnh để trả lời thật chính xác. Anh/chị có thể nói rõ hơn một chút mục tiêu, ngân sách, người nhận quà hoặc tình huống đang gặp không ạ?",
     "",
     products.length > 0
-      ? `Hiện shop đang có **${products.length} sản phẩm** để em dựa vào tư vấn. Anh/chị có thể hỏi cụ thể như: “món ăn được tốt cho sức khỏe”, “quà dưới 100k”, “quà cho bé”, hoặc “đang có khuyến mãi gì”.`
-      : "Anh/chị hỏi rõ hơn một chút, em sẽ hỗ trợ sát nhu cầu hơn nha.",
+      ? `Nếu liên quan đến shop, hiện em có dữ liệu **${products.length} sản phẩm**, có thể lọc theo giá, loại sản phẩm, nhu cầu tặng quà, món ăn được, đồ decor, ưu đãi hoặc sản phẩm phù hợp cho từng người nhận.`
+      : "Nếu anh/chị hỏi thêm 1-2 chi tiết, em sẽ hỗ trợ sát hơn nha.",
   ].join("\n");
 }
 
