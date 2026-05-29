@@ -582,7 +582,7 @@ export async function POST(req: Request) {
     let responseText: string | null = null;
     let lastError: unknown = null;
 
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]) {
+    for (const model of ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]) {
       try {
         const res = await ai.models.generateContent({
           model,
