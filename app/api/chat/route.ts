@@ -522,8 +522,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
     console.error("[API/Chat] Error calling Gemini, using fallback responder:", error);
+    const errMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json({
-      reply: buildFallbackReply(messages, products, promotions),
+      reply: `*(Lỗi kết nối Gemini API thật: ${errMessage})*\n\n` + buildFallbackReply(messages, products, promotions),
       fallback: true,
     });
   }
