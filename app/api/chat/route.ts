@@ -17,8 +17,6 @@ type ChatProduct = {
   category_id?: string | null;
 };
 
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
@@ -50,44 +48,6 @@ function buildGeminiHistory(messages: ChatMessage[]) {
   }
 
   return history;
-}
-
-function getGeminiApiKey() {
-  return (
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    process.env.GOOGLE_API_KEY ||
-    process.env.GOOGLE_GENAI_API_KEY ||
-    ""
-  ).trim();
-}
-
-async function generateGeminiReply(
-  apiKey: string,
-  systemInstruction: string,
-  history: ReturnType<typeof buildGeminiHistory>,
-  message: string,
-) {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  let lastError: unknown;
-
-  for (const modelName of GEMINI_MODELS) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction,
-      });
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessage(message);
-      const text = result.response.text().trim();
-      if (text) return text;
-    } catch (error) {
-      lastError = error;
-      console.error(`[API/Chat] Gemini model ${modelName} failed:`, error);
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error("Gemini returned no response");
 }
 
 function toNumber(value: number | string | null | undefined) {
@@ -160,44 +120,6 @@ function findSuggestedProducts(products: ChatProduct[], keywords: string[], limi
     .slice(0, limit);
 }
 
-function findFoodProducts(products: ChatProduct[], limit = 5) {
-  return findSuggestedProducts(products, [
-    "trà",
-    "tra",
-    "atiso",
-    "hồng",
-    "hong",
-    "mứt",
-    "mut",
-    "dâu",
-    "dau",
-    "bánh",
-    "banh",
-    "kẹo",
-    "keo",
-    "sấy",
-    "say",
-    "cà phê",
-    "ca phe",
-    "đặc sản",
-    "dac san",
-  ], limit);
-}
-
-function isFoodHealthMessage(message: string) {
-  const normalized = message.toLowerCase();
-  const asksProduct =
-    /(shop|sản phẩm|san pham|món|mon|đặc sản|dac san|quà|qua|đồ ăn|do an|đồ uống|do uong|thực phẩm|thuc pham)/.test(normalized);
-  const asksFoodOrHealth =
-    /(ăn được|an duoc|uống được|uong duoc|ngon|sức khỏe|suc khoe|healthy|lành|lanh|bổ|bo|tốt cho|tot cho|atiso|trà|tra)/.test(normalized);
-
-  return asksProduct && asksFoodOrHealth;
-}
-
-function isChildMessage(message: string) {
-  return /(trẻ em|tre em|em bé|em be|bé|be|5 tuổi|5 tuoi|trẻ nhỏ|tre nho|con nít|con nit)/.test(message);
-}
-
 function formatProductSuggestions(products: ChatProduct[]) {
   if (products.length === 0) return "";
   return [
@@ -205,21 +127,6 @@ function formatProductSuggestions(products: ChatProduct[]) {
     "Một vài món phù hợp trong shop:",
     ...products.map(formatProductLine),
   ].join("\n");
-}
-
-function buildFoodHealthReply(products: ChatProduct[]) {
-  const suggestions = findFoodProducts(products, 6);
-
-  return [
-    "Dạ có ạ. Nếu anh/chị muốn món **ăn/uống được, ngon và tương đối lành**, em gợi ý ưu tiên nhóm đặc sản Đà Lạt thay vì các món decor.",
-    "",
-    "**Nên chọn:** trà atiso, hồng treo gió, mứt/dâu sấy, bánh hoặc set đặc sản đóng gói. Trà atiso hợp làm quà nhẹ nhàng; hồng treo gió và dâu/mứt sấy dễ ăn, tiện mang đi.",
-    "**Lưu ý sức khỏe:** đây là tư vấn tham khảo, không phải lời khuyên y tế. Các món ngọt/sấy khô nên dùng vừa phải; nếu mua cho trẻ nhỏ, người tiểu đường, dị ứng hoặc đang có bệnh nền thì nên kiểm tra thành phần trước khi dùng.",
-    formatProductSuggestions(suggestions),
-    suggestions.length === 0
-      ? "Hiện em chưa thấy sản phẩm ăn được trong dữ liệu đang mở bán, anh/chị có thể xem lại trang Sản phẩm hoặc hỏi em theo ngân sách cụ thể nha."
-      : "",
-  ].filter(Boolean).join("\n");
 }
 
 function buildChildAdviceReply(products: ChatProduct[]) {
@@ -265,7 +172,7 @@ function buildChildAdviceReply(products: ChatProduct[]) {
 
 function buildGiftAdviceReply(lastMessage: string, products: ChatProduct[]) {
   const isForPartner = /(người yêu|bạn gái|bạn trai|crush|lover|vợ|chồng)/.test(lastMessage);
-  const isForParent = /(^|\s)(mẹ|ba|bố|cha|ông|bà)(\s|$)|phụ huynh|người lớn/.test(lastMessage);
+  const isForParent = /(mẹ|ba|bố|cha|phụ huynh|ông|bà)/.test(lastMessage);
   const isForTeacher = /(thầy|cô|giáo viên|giảng viên)/.test(lastMessage);
 
   if (!isForPartner && !isForParent && !isForTeacher) return null;
@@ -358,9 +265,12 @@ function buildPriceReply(lastMessage: string, products: ChatProduct[]) {
 function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = []) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
 
-  if (isChildMessage(lastMessage)) {
+  if (/(trẻ em|tre em|em bé|em be|bé|be|5 tuổi|5 tuoi|trẻ nhỏ|tre nho|con nít|con nit)/.test(lastMessage)) {
     return buildChildAdviceReply(products);
   }
+
+  const giftAdvice = buildGiftAdviceReply(lastMessage, products);
+  if (giftAdvice) return giftAdvice;
 
   if (
     lastMessage.includes("thanh toán") ||
@@ -416,12 +326,20 @@ function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = [
     ].join("\n");
   }
 
-  if (isFoodHealthMessage(lastMessage)) {
-    return buildFoodHealthReply(products);
+  if (
+    lastMessage.includes("sức khỏe") ||
+    lastMessage.includes("tốt cho") ||
+    lastMessage.includes("atiso") ||
+    lastMessage.includes("trà")
+  ) {
+    return [
+      "Dạ với nhóm sản phẩm tốt cho sức khỏe, anh/chị có thể tham khảo:",
+      "",
+      "- Trà atiso túi lọc: phù hợp làm quà, hỗ trợ thanh nhiệt và dễ sử dụng hằng ngày.",
+      "- Hồng treo gió: vị ngọt tự nhiên, phù hợp làm quà đặc sản Đà Lạt.",
+      "- Dâu tằm sấy dẻo: món ăn nhẹ dễ dùng, phù hợp làm quà cho bạn bè và gia đình.",
+    ].join("\n");
   }
-
-  const giftAdvice = buildGiftAdviceReply(lastMessage, products);
-  if (giftAdvice) return giftAdvice;
 
   if (
     lastMessage.includes("giá") ||
@@ -481,7 +399,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Thiếu nội dung câu hỏi." }, { status: 400 });
     }
 
-    const apiKey = getGeminiApiKey();
+    const apiKey = process.env.GEMINI_API_KEY;
     const isMockMode = !apiKey || apiKey.includes("your_gemini_api_key");
 
     // 1. Fetch products & promotions to build the AI's context
@@ -520,20 +438,6 @@ export async function POST(req: Request) {
     }).join("\n");
 
     const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
-    if (isChildMessage(lastMessage)) {
-      return NextResponse.json({
-        reply: buildChildAdviceReply(products),
-        deterministic: true,
-      });
-    }
-
-    if (isFoodHealthMessage(lastMessage)) {
-      return NextResponse.json({
-        reply: buildFoodHealthReply(products),
-        deterministic: true,
-      });
-    }
-
     if (isPriceRelatedMessage(lastMessage)) {
       const priceReply = buildPriceReply(lastMessage, products);
       if (priceReply) {
@@ -551,9 +455,8 @@ export async function POST(req: Request) {
       });
     }
 
-    const systemInstruction = `Bạn là trợ lý AI thông minh, tự nhiên và thân thiện của cửa hàng "Đà Lạt Souvenir" (hoạt động 24/7).
-Bạn hoạt động giống một trợ lý Gemini trong website: có thể trả lời câu hỏi phổ thông, giải thích khái niệm, gợi ý lựa chọn, trò chuyện tự nhiên và hỗ trợ khách hàng. Khi câu hỏi liên quan đến shop, sản phẩm, giá, khuyến mãi, thanh toán, giao hàng, tài khoản hoặc đơn hàng thì phải ưu tiên dùng dữ liệu thật được cung cấp bên dưới.
-Không được lặp một câu trả lời chung cho mọi câu hỏi. Luôn đọc đúng ý câu hỏi cuối cùng của khách, phân biệt rõ khách đang hỏi về sản phẩm, giá, sức khỏe, trẻ em, thanh toán, khuyến mãi hay câu hỏi phổ thông ngoài shop.
+    const systemInstruction = `Bạn là Trợ lý ảo AI thông minh và thân thiện của cửa hàng "Đà Lạt Souvenir" (hoạt động 24/7).
+Nhiệm vụ của bạn là tư vấn cho khách hàng về các sản phẩm lưu niệm, đặc sản Đà Lạt, các chương trình khuyến mãi, giá cả, và các thông tin liên quan đến shop.
 
 THÔNG TIN CỬA HÀNG "ĐÀ LẠT SOUVENIR":
 - Địa chỉ: Thành phố Qui Nhơn, Bình Định (Lưu ý: Shop bán đặc sản Đà Lạt tuyển chọn chất lượng cao nhưng có trụ sở tại Quy Nhơn).
@@ -581,7 +484,6 @@ DANH SÁCH CHƯƠNG TRÌNH KHUYẾN MÃI ĐANG CHẠY:
 ${promotionsContext || "Hiện không có chương trình khuyến mãi lớn nào đang diễn ra."}
 
 QUY TẮC PHẢN HỒI:
-0. Trước khi trả lời, xác định đúng loại câu hỏi. Nếu khách hỏi "shop có sản phẩm gì ăn được/ngon/tốt cho sức khỏe không" thì phải tư vấn nhóm đặc sản ăn/uống được; không tự chuyển sang chủ đề quà cho gia đình nếu khách chưa nói.
 1. Trả lời thân thiện, lịch sự, xưng hô là "Dạ em chào anh/chị" hoặc "Dạ, Đà Lạt Souvenir xin nghe" và kết thúc câu chào/hỏi tự nhiên. Sử dụng biểu tượng cảm xúc (emoji) tinh tế.
 2. Dữ liệu sản phẩm và giá cả phải đúng tuyệt đối theo danh sách được cung cấp ở trên. Nếu khách hàng hỏi sản phẩm không có trong danh sách, hãy phản hồi khéo léo là hiện shop chưa kinh doanh sản phẩm này nhưng gợi ý sản phẩm thay thế tương đương.
 3. Khi khách hỏi về công dụng sức khỏe (ví dụ Atiso thanh nhiệt mát gan, hồng treo gió dẻo ngọt tự nhiên,...), hãy dựa vào mô tả và công dụng thực tế của sản phẩm để tư vấn chu đáo và chuyên nghiệp.
@@ -591,15 +493,22 @@ QUY TẮC PHẢN HỒI:
 7. Trả lời ngắn gọn, súc tích, dễ hiểu. Sử dụng định dạng markdown (danh sách gạch đầu dòng, chữ đậm) để câu trả lời rõ ràng.
 8. KHÔNG tự bịa ra thông tin liên hệ hay giá cả khác ngoài các thông tin đã được cung cấp ở trên.`;
 
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: systemInstruction,
+    });
+
     // Format history for Google AI SDK
     // The SDK expects history like: [{ role: 'user' | 'model', parts: [{ text: '...' }] }]
     const formattedHistory = buildGeminiHistory(messages.slice(0, -1));
-    const text = await generateGeminiReply(
-      apiKey,
-      systemInstruction,
-      formattedHistory,
-      messages[messages.length - 1]?.content || "",
-    );
+
+    const chat = model.startChat({
+      history: formattedHistory,
+    });
+
+    const result = await chat.sendMessage(messages[messages.length - 1]?.content || "");
+    const text = result.response.text().trim();
 
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
