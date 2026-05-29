@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminSupabaseClient } from "@/lib/supabaseClient";
+import { CATEGORIES, PRODUCTS } from "@/features/products/mock-data";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -143,17 +144,7 @@ function formatProductSuggestions(products: ChatProduct[]) {
 }
 
 function buildSleepAdviceReply(products: ChatProduct[]) {
-  const relaxingProducts = pickProducts(products, [
-    "nến",
-    "nen",
-    "lavender",
-    "thông rừng",
-    "thong rung",
-    "trà",
-    "tra",
-    "atiso",
-  ], 4);
-
+  const relaxingProducts = pickProducts(products, ["nến", "nen", "lavender", "thông rừng", "thong rung", "trà", "tra", "atiso"], 4);
   return [
     "Dạ nếu anh/chị muốn **dễ ngủ hơn**, mình có thể thử vài cách nhẹ nhàng này trước ạ:",
     "",
@@ -245,28 +236,7 @@ function buildFallbackReply(
   }
 
   if (/(ăn được|uống được|đồ ăn|đồ uống|ngon|sức khỏe|healthy|tốt cho|atiso|trà|đặc sản)/.test(lastMessage)) {
-    const foodProducts = pickProducts(products, [
-      "trà",
-      "tra",
-      "atiso",
-      "hồng",
-      "hong",
-      "mứt",
-      "mut",
-      "dâu",
-      "dau",
-      "bánh",
-      "banh",
-      "kẹo",
-      "keo",
-      "sấy",
-      "say",
-      "cà phê",
-      "ca phe",
-      "đặc sản",
-      "dac san",
-    ], 6);
-
+    const foodProducts = pickProducts(products, ["trà", "tra", "atiso", "hồng", "hong", "mứt", "mut", "dâu", "dau", "bánh", "banh", "kẹo", "keo", "sấy", "say", "cà phê", "ca phe", "đặc sản", "dac san"], 6);
     return [
       "Dạ có ạ. Nếu anh/chị muốn món **ăn/uống được, ngon và tương đối lành**, em gợi ý ưu tiên nhóm đặc sản Đà Lạt.",
       "",
@@ -277,23 +247,7 @@ function buildFallbackReply(
   }
 
   if (/(trẻ em|tre em|em bé|em be|bé|be|5 tuổi|trẻ nhỏ|con nít)/.test(lastMessage)) {
-    const childSafeProducts = pickProducts(products, [
-      "sticker",
-      "sổ",
-      "so tay",
-      "móc khóa",
-      "moc khoa",
-      "gấu",
-      "gau",
-      "túi",
-      "tui",
-      "nón",
-      "non",
-      "khăn",
-      "khan",
-      "len",
-    ], 5);
-
+    const childSafeProducts = pickProducts(products, ["sticker", "sổ", "so tay", "móc khóa", "moc khoa", "gấu", "gau", "túi", "tui", "nón", "non", "khăn", "khan", "len"], 5);
     return [
       "Dạ với trẻ nhỏ, mình nên ưu tiên món **an toàn, nhẹ, dễ dùng và không có chi tiết nhỏ dễ nuốt**.",
       "",
@@ -349,13 +303,11 @@ function buildFallbackReply(
   }
 
   return [
-    "Dạ để em trả lời theo hướng hữu ích nhất ạ.",
-    "",
-    "Với câu hỏi này, em chưa đủ ngữ cảnh để trả lời thật chính xác. Anh/chị có thể nói rõ hơn một chút mục tiêu, ngân sách, người nhận quà hoặc tình huống đang gặp không ạ?",
-    "",
+    "Dạ em chào anh/chị! Em có thể giúp gì cho anh/chị hôm nay ạ?",
+    "Em là Trợ lý ảo của shop **Đà Lạt Souvenir**, sẵn sàng tư vấn về đặc sản Đà Lạt (mứt dâu tây, hồng treo gió, trà atiso), nến thơm decor, đồ len thủ công cũng như các chính sách đặt hàng, thanh toán và liên hệ ạ.",
     products.length > 0
-      ? `Nếu liên quan đến shop, hiện em có dữ liệu **${products.length} sản phẩm**, có thể lọc theo giá, loại sản phẩm, nhu cầu tặng quà, món ăn được, đồ decor, ưu đãi hoặc sản phẩm phù hợp cho từng người nhận.`
-      : "Nếu anh/chị hỏi thêm 1-2 chi tiết, em sẽ hỗ trợ sát hơn nha.",
+      ? `\nHiện em có thông tin về **${products.length} sản phẩm** tại shop. Anh/chị cần bé tư vấn sản phẩm nào ạ?`
+      : "",
   ].join("\n");
 }
 
@@ -422,7 +374,8 @@ QUY TẮC TRẢ LỜI:
 3. Với câu hỏi ngoài phạm vi shop, vẫn trả lời như trợ lý AI phổ thông; nếu phù hợp thì liên hệ nhẹ về nhu cầu chọn quà/sản phẩm.
 4. Với sức khỏe, trẻ em, dị ứng, bệnh lý, phụ nữ mang thai hoặc người lớn tuổi: chỉ tư vấn tham khảo, không chẩn đoán bệnh, không khẳng định chữa bệnh.
 5. Nếu khách hỏi "shop có sản phẩm gì ăn được, ngon, tốt cho sức khỏe không", phải tư vấn nhóm đặc sản ăn/uống được như trà atiso, hồng treo gió, mứt/dâu sấy, bánh hoặc set đặc sản.
-6. Trả lời súc tích nhưng đủ ý. Dùng markdown gọn gàng: gạch đầu dòng, chữ đậm, đoạn ngắn.`;
+6. Trả lời súc tích nhưng đủ ý. Dùng markdown gọn gàng: gạch đầu dòng, chữ đậm, đoạn ngắn.
+7. Khi khách hàng chỉ chào hỏi như "xin chào", "hello", "hi", hãy phản hồi cực kỳ nồng nhiệt, thân thiện, giới thiệu bản thân là trợ lý của shop Đà Lạt Souvenir và hỏi xem có thể giúp gì cho họ.`;
 }
 
 export async function POST(req: Request) {
@@ -438,23 +391,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Thiếu nội dung câu hỏi." }, { status: 400 });
     }
 
-    const supabase = createAdminSupabaseClient();
+    // Try to fetch Supabase data but catch errors so they don't break the chatbot
+    try {
+      const supabase = createAdminSupabaseClient();
+      const [categoriesResult, productsResult, promotionsResult] = await Promise.all([
+        supabase.from("categories").select("category_id, name"),
+        supabase
+          .from("products")
+          .select("product_id, name, price, promoted_price, stock, unit, description, category_id")
+          .eq("is_for_sale", true),
+        supabase
+          .from("promotions")
+          .select("promotion_id, name, description, start_date, end_date, fixed_price")
+          .eq("is_active", true),
+      ]);
 
-    const [categoriesResult, productsResult, promotionsResult] = await Promise.all([
-      supabase.from("categories").select("category_id, name"),
-      supabase
-        .from("products")
-        .select("product_id, name, price, promoted_price, stock, unit, description, category_id")
-        .eq("is_for_sale", true),
-      supabase
-        .from("promotions")
-        .select("promotion_id, name, description, start_date, end_date, fixed_price")
-        .eq("is_active", true),
-    ]);
-
-    const categories = categoriesResult.data || [];
-    products = productsResult.data || [];
-    promotions = promotionsResult.data || [];
+      const categories = categoriesResult.data || [];
+      products = productsResult.data || [];
+      promotions = promotionsResult.data || [];
+    } catch (dbError) {
+      console.warn("[API/Chat] Supabase query failed, falling back to mock catalog:", dbError);
+      // fallback to mock catalog so the chatbot always has data
+      products = PRODUCTS.map(p => ({
+        product_id: p.product_id,
+        name: p.name,
+        price: p.price,
+        promoted_price: null,
+        stock: p.stock,
+        unit: p.unit || "Cái/Hộp",
+        description: p.description,
+        category_id: p.category_id
+      }));
+      promotions = [];
+    }
 
     const apiKey = getGeminiApiKey();
     const isMockMode = !apiKey || apiKey.includes("your_gemini_api_key");
@@ -467,7 +436,8 @@ export async function POST(req: Request) {
       });
     }
 
-    const categoryMap = new Map(categories.map((category) => [category.category_id, category.name]));
+    const categoriesList = CATEGORIES;
+    const categoryMap = new Map(categoriesList.map((category) => [String(category.id), category.name]));
     const systemInstruction = buildSystemInstruction(
       buildProductsContext(products, categoryMap),
       buildPromotionsContext(promotions),
@@ -478,7 +448,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
-    console.error("[API/Chat] Error:", error);
+    console.error("[API/Chat] Error calling Gemini, using fallback responder:", error);
     return NextResponse.json({
       reply: buildFallbackReply(messages, products, promotions),
       fallback: true,
