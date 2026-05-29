@@ -24,16 +24,18 @@ export default function AdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <AdminGuard>
-      <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+      <div className="flex h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <AdminSidebar />
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-40 flex h-16 items-center border-b border-[var(--color-border)] bg-[var(--glass-bg)] px-5 shadow-[var(--shadow-sm)] backdrop-blur-xl">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="z-40 flex h-16 shrink-0 items-center border-b border-[var(--color-border)] bg-[var(--glass-bg)] px-5 shadow-[var(--shadow-sm)] backdrop-blur-xl">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-accent)]">Dashboard</p>
               <h1 className="text-base font-semibold tracking-normal">Quản trị cửa hàng</h1>
             </div>
           </header>
-          <main className="min-w-0 p-3 pb-24 sm:p-6 lg:pb-6">{children}</main>
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 pb-24 custom-scrollbar sm:p-6 lg:pb-6">
+            {children}
+          </main>
         </div>
       </div>
     </AdminGuard>

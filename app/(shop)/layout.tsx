@@ -10,7 +10,7 @@ export default function ShopLayout({
     <CustomerAreaGuard>
       <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
         <Header />
-        <main id="main-content">{children}</main>
+        <main id="main-content" className="pt-16 lg:pt-20">{children}</main>
         <Footer />
         <CartDrawerMount />
       </div>

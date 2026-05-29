@@ -115,9 +115,9 @@ export default function Page() {
         </select>
       </div>
 
-      <div className="rounded-xl border bg-card text-card-foreground p-2">
+      <div className="max-h-[calc(100vh-250px)] overflow-auto rounded-xl border bg-card p-2 text-card-foreground custom-scrollbar">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
               <TableHead>Ảnh</TableHead>
               <TableHead>Tên sản phẩm</TableHead>

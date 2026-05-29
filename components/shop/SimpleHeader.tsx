@@ -10,7 +10,7 @@ const navLinks = [
 
 export default function SimpleHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--glass-bg)] shadow-[var(--shadow-sm)] backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-[var(--color-border)] bg-[var(--glass-bg)] shadow-[var(--shadow-sm)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-3 sm:px-6 lg:px-10 2xl:px-12">
         <Link
           href="/"

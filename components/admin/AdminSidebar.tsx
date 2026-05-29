@@ -59,7 +59,7 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="hidden h-screen w-[256px] shrink-0 flex-col bg-[#0c4a6e] text-white lg:flex">
+      <aside className="hidden h-screen w-[256px] shrink-0 flex-col overflow-hidden bg-[#0c4a6e] text-white lg:flex">
         <div className="border-b border-sky-700/70 px-5 py-5">
           <div className="flex items-center gap-3">
             <Avatar className="size-10 border border-white/20 bg-white/10">
@@ -76,7 +76,7 @@ export default function AdminSidebar() {
             </div>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);

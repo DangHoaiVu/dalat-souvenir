@@ -220,9 +220,9 @@ export default function Page() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border bg-card p-1 text-card-foreground shadow-sm sm:p-2">
+      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-card p-1 text-card-foreground shadow-sm custom-scrollbar sm:p-2">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
               <TableHead>Mã đơn</TableHead>
               <TableHead>Khách hàng</TableHead>
