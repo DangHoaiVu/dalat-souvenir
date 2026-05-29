@@ -7,16 +7,6 @@ type ChatMessage = {
   content: string;
 };
 
-type ChatProduct = {
-  name: string | null;
-  price: number | string | null;
-  promoted_price?: number | string | null;
-  stock?: number | null;
-  unit?: string | null;
-  description?: string | null;
-  category_id?: string | null;
-};
-
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
@@ -50,128 +40,7 @@ function buildGeminiHistory(messages: ChatMessage[]) {
   return history;
 }
 
-function toNumber(value: number | string | null | undefined) {
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  if (typeof value === "string") {
-    const parsed = Number(value.replace(/[^\d.-]/g, ""));
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
-
-function formatVnd(value: number) {
-  return `${new Intl.NumberFormat("vi-VN").format(Math.round(value))}đ`;
-}
-
-function getProductPrice(product: ChatProduct) {
-  const promoted = toNumber(product.promoted_price);
-  return promoted > 0 ? promoted : toNumber(product.price);
-}
-
-function parsePriceThreshold(message: string) {
-  const match = message.match(/(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr|m|k|nghìn|ngan|ngàn)?/i);
-  if (!match) return null;
-
-  const rawNumber = Number(match[1].replace(",", "."));
-  if (!Number.isFinite(rawNumber)) return null;
-
-  const unit = (match[2] || "").toLowerCase();
-  let amount = rawNumber;
-  if (["triệu", "trieu", "tr", "m"].includes(unit)) {
-    amount *= 1_000_000;
-  } else if (["k", "nghìn", "ngan", "ngàn"].includes(unit)) {
-    amount *= 1_000;
-  }
-
-  const direction = /(trên|hơn|cao hơn|lớn hơn|quá|từ).*(trở lên)?/.test(message)
-    ? "above"
-    : /(dưới|nhỏ hơn|thấp hơn|ít hơn|rẻ hơn)/.test(message)
-      ? "below"
-      : null;
-
-  return direction ? { amount, direction } : null;
-}
-
-function isPriceRelatedMessage(message: string) {
-  return (
-    Boolean(parsePriceThreshold(message)) ||
-    /(giá|bao nhiêu|cao nhất|đắt nhất|mắc nhất|rẻ nhất|thấp nhất|tầm tiền|khoảng tiền)/.test(message)
-  );
-}
-
-function formatProductLine(product: ChatProduct) {
-  const price = getProductPrice(product);
-  const stockText = typeof product.stock === "number" ? `, còn ${product.stock} sản phẩm` : "";
-  const unitText = product.unit ? `/${product.unit}` : "";
-  return `- **${product.name || "Sản phẩm"}**: **${formatVnd(price)}${unitText}**${stockText}`;
-}
-
-function buildPriceReply(lastMessage: string, products: ChatProduct[]) {
-  const pricedProducts = products
-    .filter((product) => product.name && getProductPrice(product) > 0)
-    .sort((a, b) => getProductPrice(a) - getProductPrice(b));
-
-  if (pricedProducts.length === 0) return null;
-
-  const threshold = parsePriceThreshold(lastMessage);
-  const cheapest = pricedProducts[0];
-  const mostExpensive = pricedProducts[pricedProducts.length - 1];
-
-  if (threshold) {
-    const matchedProducts = pricedProducts.filter((product) => {
-      const price = getProductPrice(product);
-      return threshold.direction === "above" ? price > threshold.amount : price < threshold.amount;
-    });
-
-    if (matchedProducts.length === 0) {
-      const compareText = threshold.direction === "above" ? "trên" : "dưới";
-      const reference = threshold.direction === "above" ? mostExpensive : cheapest;
-      return [
-        `Dạ hiện shop **chưa có sản phẩm nào giá ${compareText} ${formatVnd(threshold.amount)}** ạ.`,
-        "",
-        threshold.direction === "above"
-          ? `Sản phẩm cao nhất hiện tại là **${reference.name}** với giá **${formatVnd(getProductPrice(reference))}**.`
-          : `Sản phẩm thấp nhất hiện tại là **${reference.name}** với giá **${formatVnd(getProductPrice(reference))}**.`,
-        "",
-        "Anh/chị có thể xem thêm các sản phẩm đang bán trong trang Sản phẩm nha.",
-      ].join("\n");
-    }
-
-    const compareText = threshold.direction === "above" ? "trên" : "dưới";
-    return [
-      `Dạ có **${matchedProducts.length} sản phẩm** giá ${compareText} **${formatVnd(threshold.amount)}** ạ:`,
-      "",
-      ...matchedProducts.slice(0, 6).map(formatProductLine),
-      matchedProducts.length > 6 ? "" : null,
-      matchedProducts.length > 6 ? `Và còn ${matchedProducts.length - 6} sản phẩm khác phù hợp.` : null,
-    ].filter(Boolean).join("\n");
-  }
-
-  if (lastMessage.includes("cao nhất") || lastMessage.includes("đắt nhất") || lastMessage.includes("mắc nhất")) {
-    return [
-      `Dạ sản phẩm có giá cao nhất hiện tại là **${mostExpensive.name}** với giá **${formatVnd(getProductPrice(mostExpensive))}** ạ.`,
-      "",
-      "Giá có thể thay đổi nếu admin bật chương trình ưu đãi mới.",
-    ].join("\n");
-  }
-
-  if (lastMessage.includes("rẻ nhất") || lastMessage.includes("thấp nhất")) {
-    return [
-      `Dạ sản phẩm có giá thấp nhất hiện tại là **${cheapest.name}** với giá **${formatVnd(getProductPrice(cheapest))}** ạ.`,
-      "",
-      "Nếu anh/chị cần quà nhỏ xinh, em có thể gợi ý thêm các món giá mềm trong shop nha.",
-    ].join("\n");
-  }
-
-  return [
-    `Dạ khoảng giá sản phẩm hiện tại từ **${formatVnd(getProductPrice(cheapest))}** đến **${formatVnd(getProductPrice(mostExpensive))}** ạ.`,
-    "",
-    "Một vài sản phẩm tiêu biểu:",
-    ...pricedProducts.slice(0, 5).map(formatProductLine),
-  ].join("\n");
-}
-
-function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = []) {
+function buildFallbackReply(messages: ChatMessage[]) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
 
   if (
@@ -248,9 +117,6 @@ function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = [
     lastMessage.includes("bao nhiêu") ||
     lastMessage.includes("sản phẩm")
   ) {
-    const priceReply = buildPriceReply(lastMessage, products);
-    if (priceReply) return priceReply;
-
     return [
       "Dạ anh/chị có thể xem giá mới nhất tại trang Sản phẩm của website.",
       "",
@@ -287,7 +153,6 @@ function buildFallbackReply(messages: ChatMessage[], products: ChatProduct[] = [
 
 export async function POST(req: Request) {
   let messages: ChatMessage[] = [];
-  let products: ChatProduct[] = [];
 
   try {
     const body = await req.json();
@@ -300,6 +165,28 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     const isMockMode = !apiKey || apiKey.includes("your_gemini_api_key");
 
+    if (isMockMode) {
+      // Return a simulated, smart mock response based on user input
+      const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
+      let reply = "Dạ em chào anh/chị! Em là trợ lý ảo Đà Lạt Souvenir. (Hiện tại API Key của Gemini đang chạy ở chế độ thử nghiệm/offline nên em sẽ phản hồi bằng dữ liệu giả lập nhé ạ!)\n\n";
+
+      if (lastMessage.includes("liên hệ") || lastMessage.includes("địa chỉ") || lastMessage.includes("ở đâu") || lastMessage.includes("sđt") || lastMessage.includes("điện thoại")) {
+        reply += "📍 **Thông tin liên hệ của Shop:**\n- **Địa chỉ:** Thành phố Qui Nhơn, Bình Định (Shop chuyên đặc sản Đà Lạt tuyển chọn).\n- **Hotline:** 0979.777.777\n- **Email:** danghoaivu2004@gmail.com\n- **Instagram:** @lovehoaivulover\n- **Giờ mở cửa:** 8:00 - 22:00 hàng ngày.";
+      } else if (lastMessage.includes("sức khỏe") || lastMessage.includes("tốt cho") || lastMessage.includes("atiso") || lastMessage.includes("atixô") || lastMessage.includes("trà")) {
+        reply += "🍵 **Sản phẩm tốt cho sức khỏe tiêu biểu:**\n- **Trà atiso túi lọc:** Hỗ trợ thanh nhiệt, mát gan, giải độc cơ thể cực tốt. Rất thích hợp làm quà biếu.\n- **Hồng treo gió:** Sấy treo tự nhiên, vị ngọt dẻo lành mạnh, không đường hóa học.\n- **Dâu tằm sấy dẻo:** Nhiều vitamin, giúp đẹp da và hỗ trợ tiêu hóa.";
+      } else if (lastMessage.includes("khuyến mãi") || lastMessage.includes("giảm giá") || lastMessage.includes("sale") || lastMessage.includes("quà tặng")) {
+        reply += "🎁 **Chương trình ưu đãi hiện có:**\n- **Miễn phí vận chuyển:** Cho tất cả các đơn hàng từ **500k** trở lên trên phạm vi toàn quốc.\n- **Combo quà tặng:** Có Set lưu niệm mix nhiều món (mứt, trà, sổ tay) với giá cực kỳ tiết kiệm để làm quà.";
+      } else if (lastMessage.includes("mứt") || lastMessage.includes("dâu tây") || lastMessage.includes("giá") || lastMessage.includes("bao nhiêu")) {
+        reply += "🍓 **Thông tin giá cả sản phẩm nổi bật:**\n- **Mứt dâu tây Đà Lạt:** 120.000 VND / Hộp 500g.\n- **Hồng treo gió:** 315.000 VND / Hộp 500g.\n- **Khăn len handmade:** 150.000 VND / Cái.\n- **Nến thơm lavender/thông rừng:** 140.000 - 150.000 VND / Hũ.";
+      } else {
+        reply += "Dạ, Đà Lạt Souvenir chuyên cung cấp các sản phẩm đặc sản Đà Lạt (Mứt dâu tây, hồng treo gió, trà atiso), nến thơm decor, đồ len handmade xinh xắn.\n\nAnh/chị cần em hỗ trợ xem giá sản phẩm nào, tư vấn quà tặng tốt cho sức khỏe hay cần thông tin liên lạc giao hàng ạ?";
+      }
+
+      // Simulate network delay for realistic typing indicator
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return NextResponse.json({ reply });
+    }
+
     // 1. Fetch products & promotions to build the AI's context
     const supabase = createAdminSupabaseClient();
 
@@ -309,12 +196,10 @@ export async function POST(req: Request) {
       .select("category_id, name");
 
     // Fetch active/saleable products
-    const { data: productRows } = await supabase
+    const { data: products } = await supabase
       .from("products")
       .select("product_id, name, price, promoted_price, stock, unit, description, category_id")
       .eq("is_for_sale", true);
-
-    products = productRows || [];
 
     // Fetch active promotions
     const { data: promotions } = await supabase
@@ -324,7 +209,7 @@ export async function POST(req: Request) {
 
     // Format products context
     const categoryMap = new Map(categories?.map(c => [c.category_id, c.name]) || []);
-    const productsContext = products.map(p => {
+    const productsContext = (products || []).map(p => {
       const catName = categoryMap.get(p.category_id) || "Khác";
       const priceText = p.promoted_price ? `${p.promoted_price} VND (Giá gốc: ${p.price} VND, đang khuyến mãi)` : `${p.price} VND`;
       return `- Tên: ${p.name}\n  Danh mục: ${catName}\n  Giá: ${priceText}\n  Đơn vị: ${p.unit || "Cái/Hộp"}\n  Còn lại: ${p.stock} sản phẩm trong kho\n  Mô tả: ${p.description || "Chưa có mô tả chi tiết."}`;
@@ -334,24 +219,6 @@ export async function POST(req: Request) {
     const promotionsContext = (promotions || []).map(promo => {
       return `- Chương trình: ${promo.name}\n  Mô tả: ${promo.description || "Không có mô tả chi tiết."}\n  Thời gian: ${promo.start_date ? new Date(promo.start_date).toLocaleDateString("vi-VN") : ""} đến ${promo.end_date ? new Date(promo.end_date).toLocaleDateString("vi-VN") : ""}`;
     }).join("\n");
-
-    const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
-    if (isPriceRelatedMessage(lastMessage)) {
-      const priceReply = buildPriceReply(lastMessage, products);
-      if (priceReply) {
-        return NextResponse.json({
-          reply: priceReply,
-          deterministic: true,
-        });
-      }
-    }
-
-    if (isMockMode) {
-      return NextResponse.json({
-        reply: buildFallbackReply(messages, products),
-        fallback: true,
-      });
-    }
 
     const systemInstruction = `Bạn là Trợ lý ảo AI thông minh và thân thiện của cửa hàng "Đà Lạt Souvenir" (hoạt động 24/7).
 Nhiệm vụ của bạn là tư vấn cho khách hàng về các sản phẩm lưu niệm, đặc sản Đà Lạt, các chương trình khuyến mãi, giá cả, và các thông tin liên quan đến shop.
@@ -398,18 +265,20 @@ QUY TẮC PHẢN HỒI:
     // The SDK expects history like: [{ role: 'user' | 'model', parts: [{ text: '...' }] }]
     const formattedHistory = buildGeminiHistory(messages.slice(0, -1));
 
+    const lastMessage = messages[messages.length - 1]?.content || "";
+
     const chat = model.startChat({
       history: formattedHistory,
     });
 
-    const result = await chat.sendMessage(messages[messages.length - 1]?.content || "");
+    const result = await chat.sendMessage(lastMessage);
     const text = result.response.text().trim();
 
     return NextResponse.json({ reply: text });
   } catch (error: unknown) {
     console.error("[API/Chat] Error:", error);
     return NextResponse.json({
-      reply: buildFallbackReply(messages, products),
+      reply: buildFallbackReply(messages),
       fallback: true,
     });
   }
