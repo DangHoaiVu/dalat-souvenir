@@ -468,10 +468,10 @@ export async function POST(req: Request) {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
-      contents: contents,
+      contents: contents as any,
       config: {
         systemInstruction: systemInstruction,
-      },
+      } as any,
     });
 
     const text = response.text?.trim() || "";
