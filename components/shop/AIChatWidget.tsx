@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { MessageSquare, X, Send, Sparkles, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { authFetch } from "@/lib/auth-fetch";
+import { useAuthStore } from "@/stores/authStore";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -28,10 +31,23 @@ const QUICK_PROMPTS = [
   "Liên hệ và địa chỉ shop ở đâu?",
   "Đặc sản nào tốt cho sức khỏe?",
   "Có khuyến mãi gì hôm nay không?",
+  "Shop hỗ trợ thanh toán bằng cách nào?",
 ];
+
+const GUEST_CHAT_KEY = "dalat_souvenir_chat_history:guest";
+
+function getWelcomeMessage(): Message {
+  return {
+    id: "welcome",
+    role: "assistant",
+    content: "Dạ em chào anh/chị! Em là trợ lý ảo 24/7 của Đà Lạt Souvenir. Em có thể giúp anh/chị tìm hiểu về đặc sản, quà lưu niệm, khuyến mãi, phương thức thanh toán, thông tin liên hệ của shop hoặc tư vấn các sản phẩm tốt cho sức khỏe ạ. Anh/chị cần em hỗ trợ gì ạ?",
+    timestamp: new Date(),
+  };
+}
 
 export default function AIChatWidget() {
   const pathname = usePathname();
+  const currentUserId = useAuthStore((state) => state.user?.id);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -43,9 +59,13 @@ export default function AIChatWidget() {
   // Hidden on checkout page and cart page as per user request to avoid distraction
   const isHidden = pathname === "/checkout" || pathname === "/cart";
 
-  // Load chat history from sessionStorage on mount
+  const chatStorageKey = currentUserId
+    ? `dalat_souvenir_chat_history:user:${currentUserId}`
+    : GUEST_CHAT_KEY;
+
+  // Load chat history from sessionStorage when the current chat owner changes.
   useEffect(() => {
-    const saved = sessionStorage.getItem("dalat_souvenir_chat_history");
+    const saved = sessionStorage.getItem(chatStorageKey);
     if (saved) {
       try {
         const parsed: unknown = JSON.parse(saved);
@@ -55,28 +75,24 @@ export default function AIChatWidget() {
               timestamp: new Date(message.timestamp),
             }))
           : [];
-        setMessages(restored);
+        setMessages(restored.length > 0 ? restored : [getWelcomeMessage()]);
       } catch (e) {
         console.error("Failed to parse chat history", e);
+        setMessages([getWelcomeMessage()]);
       }
     } else {
-      // Default welcome message
-      const welcomeMessage: Message = {
-        id: "welcome",
-        role: "assistant",
-        content: "Dạ em chào anh/chị! Em là trợ lý ảo 24/7 của Đà Lạt Souvenir. Em có thể giúp anh/chị tìm hiểu về đặc sản, quà lưu niệm, thông tin liên hệ của shop hoặc tư vấn các sản phẩm tốt cho sức khỏe ạ. Anh/chị cần em hỗ trợ gì ạ?",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
+      setMessages([getWelcomeMessage()]);
     }
-  }, []);
+    setErrorMsg("");
+    setInputValue("");
+  }, [chatStorageKey]);
 
   // Save history to sessionStorage whenever it changes
   useEffect(() => {
     if (messages.length > 0) {
-      sessionStorage.setItem("dalat_souvenir_chat_history", JSON.stringify(messages));
+      sessionStorage.setItem(chatStorageKey, JSON.stringify(messages));
     }
-  }, [messages]);
+  }, [chatStorageKey, messages]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -102,7 +118,7 @@ export default function AIChatWidget() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await authFetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,14 +166,8 @@ export default function AIChatWidget() {
   };
 
   const handleClearHistory = () => {
-    sessionStorage.removeItem("dalat_souvenir_chat_history");
-    const welcomeMessage: Message = {
-      id: "welcome",
-      role: "assistant",
-      content: "Dạ em chào anh/chị! Em là trợ lý ảo 24/7 của Đà Lạt Souvenir. Em có thể giúp anh/chị tìm hiểu về đặc sản, quà lưu niệm, thông tin liên hệ của shop hoặc tư vấn các sản phẩm tốt cho sức khỏe ạ. Anh/chị cần em hỗ trợ gì ạ?",
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
+    sessionStorage.removeItem(chatStorageKey);
+    setMessages([getWelcomeMessage()]);
   };
 
   return (

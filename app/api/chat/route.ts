@@ -44,6 +44,23 @@ function buildFallbackReply(messages: ChatMessage[]) {
   const lastMessage = (messages[messages.length - 1]?.content || "").toLowerCase();
 
   if (
+    lastMessage.includes("thanh toán") ||
+    lastMessage.includes("chuyển khoản") ||
+    lastMessage.includes("cod") ||
+    lastMessage.includes("nhận hàng") ||
+    lastMessage.includes("tiền mặt")
+  ) {
+    return [
+      "Dạ shop hiện hỗ trợ 2 phương thức thanh toán:",
+      "",
+      "- Thanh toán khi nhận hàng (COD): anh/chị trả tiền mặt khi shipper giao hàng.",
+      "- Chuyển khoản ngân hàng: shop sẽ xác nhận thông tin đơn và liên hệ lại để hướng dẫn chuyển khoản.",
+      "",
+      "Anh/chị có thể chọn phương thức phù hợp ở bước xác nhận đặt hàng ạ.",
+    ].join("\n");
+  }
+
+  if (
     lastMessage.includes("liên hệ") ||
     lastMessage.includes("địa chỉ") ||
     lastMessage.includes("ở đâu") ||
@@ -104,6 +121,26 @@ function buildFallbackReply(messages: ChatMessage[]) {
       "Dạ anh/chị có thể xem giá mới nhất tại trang Sản phẩm của website.",
       "",
       "Một số nhóm sản phẩm nổi bật gồm đặc sản Đà Lạt, đồ len/phụ kiện, đồ lưu niệm handmade, nến thơm và bộ quà tặng. Giá có thể thay đổi theo chương trình ưu đãi đang bật.",
+    ].join("\n");
+  }
+
+  if (
+    lastMessage.includes("đặt hàng") ||
+    lastMessage.includes("đơn hàng") ||
+    lastMessage.includes("giỏ hàng") ||
+    lastMessage.includes("hủy đơn") ||
+    lastMessage.includes("lịch sử")
+  ) {
+    return [
+      "Dạ anh/chị có thể mua hàng theo quy trình sau:",
+      "",
+      "1. Vào trang Sản phẩm và chọn món muốn mua.",
+      "2. Thêm sản phẩm vào giỏ hàng.",
+      "3. Mở giỏ hàng, kiểm tra sản phẩm và bấm xác nhận đặt hàng.",
+      "4. Điền thông tin giao hàng và chọn thanh toán COD hoặc chuyển khoản.",
+      "5. Sau khi đặt thành công, anh/chị có thể xem đơn trong mục Tài khoản > Đơn hàng.",
+      "",
+      "Với đơn chưa xử lý/giao, anh/chị có thể cập nhật thông tin hoặc hủy đơn trong trang đơn hàng của mình ạ.",
     ].join("\n");
   }
 
@@ -194,6 +231,16 @@ THÔNG TIN CỬA HÀNG "ĐÀ LẠT SOUVENIR":
 - Giờ mở cửa: 8:00 - 22:00 mỗi ngày.
 - Chủ cửa hàng: Đặng Hoài Vũ.
 - Phí giao hàng: Miễn phí cho đơn hàng từ 500k trở lên. Giao hàng toàn quốc nhanh chóng từ 2-4 ngày.
+- Phương thức thanh toán: Hỗ trợ thanh toán khi nhận hàng (COD) và chuyển khoản ngân hàng. Với COD, khách thanh toán bằng tiền mặt khi nhận hàng. Với chuyển khoản, shop sẽ liên hệ xác nhận và hướng dẫn thông tin chuyển khoản.
+
+CHỨC NĂNG WEBSITE:
+- Khách hàng có thể xem trang chủ, trang sản phẩm, trang chi tiết sản phẩm, câu chuyện thương hiệu, giỏ hàng và bộ quà tặng.
+- Người dùng có thể đăng nhập bằng Google hoặc email/password.
+- Người dùng có thể thêm sản phẩm vào giỏ hàng, đặt hàng, chọn thanh toán khi nhận hàng hoặc chuyển khoản ngân hàng, xem lịch sử đơn hàng trong mục Tài khoản > Đơn hàng.
+- Người dùng có thể cập nhật thông tin giao hàng hoặc hủy đơn khi đơn hàng còn ở trạng thái cho phép.
+- Admin có thể xem website như người dùng thường và có thêm Admin Panel để quản lý sản phẩm, đơn hàng, khuyến mãi, ảnh sản phẩm và mô tả bằng AI.
+- Chương trình khuyến mãi có thể được bật/tắt. Khi đang hoạt động, website có thể hiển thị popup ưu đãi và áp dụng giá ưu đãi cho các sản phẩm được chọn.
+- Chatbot chỉ hỗ trợ tư vấn; các thao tác đặt hàng, hủy đơn, chỉnh thông tin đơn hoặc thanh toán vẫn cần người dùng thực hiện trực tiếp trên giao diện website.
 
 DANH SÁCH SẢN PHẨM ĐANG KINH DOANH:
 ${productsContext || "Hiện tại không có sản phẩm nào trực tuyến."}
