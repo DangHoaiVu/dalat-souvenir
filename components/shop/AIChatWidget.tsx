@@ -36,9 +36,14 @@ const QUICK_PROMPTS = [
 
 const GUEST_CHAT_KEY = "dalat_souvenir_chat_history:guest";
 const SPEECH_BUBBLES = [
-  "Chào bạn iu! Bé có thể giúp gì hông nè?",
-  "Đà Lạt hôm nay se lạnh, bạn cần tìm đồ ấm áp hông?",
-  "Có quà xinh cần bé tư vấn không nè?",
+  "Chào bạn iu! Cần bé tư vấn món quà xinh nào hông nè?",
+  "Đà Lạt hôm nay se lạnh, bạn cần tìm chút ấm áp hông?",
+  "Bé thấy bạn rồi nha, ghé hỏi bé một câu đi nè.",
+  "Quà xinh đang chờ chủ nhân dễ thương đó nha.",
+  "Bạn đang tìm đặc sản hay đồ lưu niệm đáng yêu nè?",
+  "Bấm vào bé đi, bé tư vấn quà Đà Lạt siêu có tâm.",
+  "Mua quà mà phân vân thì để bé lo nha.",
+  "Bé trực 24/7, chỉ chờ bạn hỏi thôi á.",
 ];
 
 function getWelcomeMessage(): Message {
@@ -63,6 +68,8 @@ export default function AIChatWidget() {
   const [attentionKey, setAttentionKey] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hideSpeechTimerRef = useRef<number | null>(null);
+  const suppressNextClickRef = useRef(false);
 
   // Hidden on checkout page and cart page as per user request to avoid distraction
   const isHidden = pathname === "/checkout" || pathname === "/cart";
@@ -108,22 +115,37 @@ export default function AIChatWidget() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    const message = SPEECH_BUBBLES[Math.floor(Math.random() * SPEECH_BUBBLES.length)];
-    const showTimer = window.setTimeout(() => {
+    if (isHidden || isOpen) {
+      setShowSpeechBubble(false);
+      return;
+    }
+
+    const showRandomSpeech = () => {
+      const message = SPEECH_BUBBLES[Math.floor(Math.random() * SPEECH_BUBBLES.length)];
       setSpeechText(message);
       setShowSpeechBubble(true);
-    }, 4000);
-    const hideTimer = window.setTimeout(() => setShowSpeechBubble(false), 10000);
-    const attentionTimer = window.setInterval(() => {
       setAttentionKey((value) => value + 1);
-    }, 15000);
+
+      if (hideSpeechTimerRef.current) {
+        window.clearTimeout(hideSpeechTimerRef.current);
+      }
+
+      hideSpeechTimerRef.current = window.setTimeout(() => {
+        setShowSpeechBubble(false);
+      }, 6500);
+    };
+
+    const firstTimer = window.setTimeout(showRandomSpeech, 2500);
+    const intervalTimer = window.setInterval(showRandomSpeech, 10000);
 
     return () => {
-      window.clearTimeout(showTimer);
-      window.clearTimeout(hideTimer);
-      window.clearInterval(attentionTimer);
+      window.clearTimeout(firstTimer);
+      window.clearInterval(intervalTimer);
+      if (hideSpeechTimerRef.current) {
+        window.clearTimeout(hideSpeechTimerRef.current);
+      }
     };
-  }, []);
+  }, [isHidden, isOpen]);
 
   if (isHidden) return null;
 
@@ -414,6 +436,15 @@ export default function AIChatWidget() {
         drag
         dragMomentum={false}
         dragElastic={0.2}
+        onDragStart={() => {
+          suppressNextClickRef.current = true;
+          setShowSpeechBubble(false);
+        }}
+        onDragEnd={() => {
+          window.setTimeout(() => {
+            suppressNextClickRef.current = false;
+          }, 180);
+        }}
         initial={{ opacity: 0, y: 18, scale: 0.88 }}
         animate={{
           opacity: isOpen ? 0 : 1,
@@ -433,7 +464,10 @@ export default function AIChatWidget() {
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
               className="absolute bottom-[88px] right-0 w-64 rounded-2xl border border-sky-100 bg-white/90 p-3 pr-9 text-sm font-semibold leading-relaxed text-slate-700 shadow-lg backdrop-blur-md"
-              onClick={() => setIsOpen(true)}
+              onClick={() => {
+                if (suppressNextClickRef.current) return;
+                setIsOpen(true);
+              }}
             >
               <button
                 type="button"
@@ -457,6 +491,7 @@ export default function AIChatWidget() {
           type="button"
           aria-label="Mở trợ lý Đà Lạt Souvenir"
           onClick={() => {
+            if (suppressNextClickRef.current) return;
             setShowSpeechBubble(false);
             setIsOpen(true);
           }}

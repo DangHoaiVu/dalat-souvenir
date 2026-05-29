@@ -256,9 +256,14 @@ export default function ProductDetailClient({
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent">Gợi ý thêm</p>
             <h2 className="text-3xl font-bold text-primary">Có thể bạn sẽ thích</h2>
           </div>
-          <div className="flex snap-x gap-4 overflow-x-auto pb-3 md:grid md:grid-cols-4 md:overflow-visible">
+          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:px-0 md:overflow-visible">
             {relatedProducts.map((item) => (
-              <ProductCard key={item.product_id} product={item} />
+              <div
+                key={item.product_id}
+                className="w-[min(76vw,280px)] flex-none snap-start sm:w-[280px] md:w-auto md:min-w-0"
+              >
+                <ProductCard product={item} />
+              </div>
             ))}
           </div>
         </section>
